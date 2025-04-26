@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ClerkProvider, SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,12 +25,51 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased p-4`}
+          cz-shortcut-listen="false"
+
+        >
+          <header className="flex justify-between items-center p-4 gap-4 h-16 border-b border-gray-300">
+            <div>
+              <Link href="/">
+                <p className="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 font-[700] cursor-pointer">SackLM</p>
+              </Link>
+              
+            </div>
+            <div>
+              <SignedOut>
+                <div className="gap-3 flex">
+                  <SignInButton />
+                  <SignUpButton />
+                </div>
+              </SignedOut>
+              <SignedIn>
+                <div className="gap-3 flex">
+
+                  <Link href={"/"}>
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Home</p>
+                  </Link>
+                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Dashboard</p>
+                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Chats</p>
+                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Documents</p>
+                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Models</p>
+                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Community</p>
+
+                  <UserButton userProfileUrl="/user-profile" userProfileMode="navigation" />
+
+
+                </div>
+              </SignedIn>
+            </div>
+          </header>
+          <div className="mt-4">
+            {children}
+          </div>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
