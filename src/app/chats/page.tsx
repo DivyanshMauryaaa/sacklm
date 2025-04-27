@@ -1,16 +1,17 @@
 'use client'
 
 import { ChatSidebar, SidebarContent, SidebarHeader, SidebarProvider } from "@/components/ui/sidebar";
-import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save } from "lucide-react";
+import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { createClient } from '@supabase/supabase-js';
-
+import { ToastContainer, toast } from 'react-toast';
+ 
 const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://liukotwfxerodfaccutn.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpdWtvdHdmeGVyb2RmYWNjdXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NTgzNTksImV4cCI6MjA2MTIzNDM1OX0.vuZMYShUySiQAWVqZrK0xg-lQIoNZ4ekhEMe8Z9yuWk"
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 )
 
 const ChatPage = () => {
@@ -21,42 +22,42 @@ const ChatPage = () => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const { user } = useUser();
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    
+
     // Load chat history from Supabase on initial render
     useEffect(() => {
         if (user) {
             fetchChatHistory();
         }
     }, [user]);
-    
+
     const fetchChatHistory = async () => {
         if (!user) return;
-        
+
         try {
             const { data, error } = await supabase
                 .from('chats')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
-                
+
             if (error) {
                 throw error;
             }
-            
+
             if (data) {
                 const formattedChats = data.map(chat => {
                     // Ensure we're properly extracting the messages array
-                    const messages = chat.content && Array.isArray(chat.content.messages) 
-                        ? chat.content.messages 
+                    const messages = chat.content && Array.isArray(chat.content.messages)
+                        ? chat.content.messages
                         : [];
-                        
+
                     return {
                         id: chat.id,
                         title: chat.title,
                         messages: messages
                     };
                 });
-                
+
                 setChatHistory(formattedChats);
             }
         } catch (error) {
@@ -64,7 +65,7 @@ const ChatPage = () => {
             console.error('Error details:', JSON.stringify(error));
         }
     };
-    
+
     // Scroll to bottom whenever messages change
     useEffect(() => {
         scrollToBottom();
@@ -79,18 +80,18 @@ const ChatPage = () => {
         if (chatMessages.length > 0) {
             saveCurrentChat();
         }
-        
+
         setActiveChatId(null);
         setChatMessages([]);
     };
-    
+
     const saveCurrentChat = async () => {
         if (chatMessages.length === 0 || !user) return;
-        
-        const title = chatMessages[0].content.length > 20 
-            ? chatMessages[0].content.slice(0, 20) + "..." 
+
+        const title = chatMessages[0].content.length > 20
+            ? chatMessages[0].content.slice(0, 20) + "..."
             : chatMessages[0].content;
-            
+
         try {
             if (activeChatId) {
                 // Update existing chat
@@ -102,16 +103,16 @@ const ChatPage = () => {
                     })
                     .eq('id', activeChatId)
                     .eq('user_id', user.id);
-                    
+
                 if (error) {
                     console.error('Update error:', error);
                     throw error;
                 }
-                
+
                 // Update local state
-                setChatHistory(prev => prev.map(chat => 
-                    chat.id === activeChatId 
-                        ? { ...chat, messages: chatMessages, title } 
+                setChatHistory(prev => prev.map(chat =>
+                    chat.id === activeChatId
+                        ? { ...chat, messages: chatMessages, title }
                         : chat
                 ));
             } else {
@@ -125,12 +126,12 @@ const ChatPage = () => {
                     })
                     .select('id')
                     .single();
-                    
+
                 if (error) {
                     console.error('Insert error:', error);
                     throw error;
                 }
-                
+
                 // Update local state with the new chat
                 const newChatId = data.id;
                 setChatHistory(prev => [{ id: newChatId, title, messages: chatMessages }, ...prev]);
@@ -140,13 +141,13 @@ const ChatPage = () => {
             console.error('Error saving chat:', error);
         }
     };
-    
+
     const loadChat = async (chatId: string) => {
         // Save current chat before switching
         if (chatMessages.length > 0 && activeChatId !== chatId) {
             await saveCurrentChat();
         }
-        
+
         // First check local state
         const chat = chatHistory.find(c => c.id === chatId);
         if (chat && chat.messages && chat.messages.length > 0) {
@@ -154,7 +155,7 @@ const ChatPage = () => {
             setActiveChatId(chatId);
             return;
         }
-        
+
         // If not in local state or messages are empty, fetch directly from Supabase
         try {
             const { data, error } = await supabase
@@ -163,17 +164,17 @@ const ChatPage = () => {
                 .eq('id', chatId)
                 .eq('user_id', user?.id)
                 .single();
-                
+
             if (error) throw error;
-            
+
             if (data && data.content && data.content.messages) {
                 setChatMessages(data.content.messages);
                 setActiveChatId(chatId);
-                
+
                 // Also update the chat history
-                setChatHistory(prev => 
-                    prev.map(c => c.id === chatId 
-                        ? { ...c, messages: data.content.messages } 
+                setChatHistory(prev =>
+                    prev.map(c => c.id === chatId
+                        ? { ...c, messages: data.content.messages }
                         : c
                     )
                 );
@@ -182,24 +183,24 @@ const ChatPage = () => {
             console.error('Error loading chat:', error);
         }
     };
-    
+
     const deleteChat = async (chatId: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        
+
         if (!user) return;
-        
+
         try {
             const { error } = await supabase
                 .from('chats')
                 .delete()
                 .eq('id', chatId)
                 .eq('user_id', user.id);
-                
+
             if (error) throw error;
-            
+
             // Update local state
             setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
-            
+
             if (activeChatId === chatId) {
                 setActiveChatId(null);
                 setChatMessages([]);
@@ -227,8 +228,8 @@ const ChatPage = () => {
                 .slice(-6) // Take last 3 exchanges (6 messages) for context
                 .map(msg => msg.content)
                 .join("\n\n");
-                
-            const promptWithContext = conversationContext 
+
+            const promptWithContext = conversationContext
                 ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}\nAI:`
                 : userPrompt;
 
@@ -267,9 +268,9 @@ const ChatPage = () => {
                 ...updatedMessages,
                 { role: "model", content: content }
             ];
-            
+
             setChatMessages(finalMessages);
-            
+
             // Auto-save chat after response
             if (user) {
                 // Use timeout to ensure state is updated before saving
@@ -284,23 +285,23 @@ const ChatPage = () => {
                             })
                             .eq('id', activeChatId)
                             .eq('user_id', user.id);
-                            
+
                         if (error) {
                             console.error('Auto-save update error:', error);
                         } else {
                             // Update local state to ensure it's in sync
-                            setChatHistory(prev => prev.map(chat => 
-                                chat.id === activeChatId 
-                                    ? { ...chat, messages: finalMessages } 
+                            setChatHistory(prev => prev.map(chat =>
+                                chat.id === activeChatId
+                                    ? { ...chat, messages: finalMessages }
                                     : chat
                             ));
                         }
                     } else {
                         // This is a new chat, save it
-                        const title = userPrompt.length > 20 
-                            ? userPrompt.slice(0, 20) + "..." 
+                        const title = userPrompt.length > 20
+                            ? userPrompt.slice(0, 20) + "..."
                             : userPrompt;
-                            
+
                         const { data, error } = await supabase
                             .from('chats')
                             .insert({
@@ -310,7 +311,7 @@ const ChatPage = () => {
                             })
                             .select('id')
                             .single();
-                            
+
                         if (error) {
                             console.error('Auto-save insert error:', error);
                         } else if (data) {
@@ -321,7 +322,7 @@ const ChatPage = () => {
                     }
                 }, 500);
             }
-            
+
         } catch (error) {
             console.error("Error fetching response:", error);
             setChatMessages((prevMessages) => [
@@ -336,6 +337,7 @@ const ChatPage = () => {
 
     return (
         <SidebarProvider className="w-full h-screen flex overflow-hidden">
+            <ToastContainer position="bottom-right" delay={1000}></ToastContainer>
             <ChatSidebar className="h-screen">
                 <SidebarHeader>
                     <div className="p-3 flex justify-between items-center">
@@ -350,7 +352,7 @@ const ChatPage = () => {
                     </div>
                 </SidebarHeader>
                 <hr />
-                <SidebarContent className="w-full overflow-y-auto">
+                <SidebarContent className="w-full overflow-y-auto p-4">
                     {!user ? (
                         <div className="p-3 text-sm text-gray-500 text-center">
                             Sign in to view your chats
@@ -361,15 +363,14 @@ const ChatPage = () => {
                         </div>
                     ) : (
                         chatHistory.map((chat) => (
-                            <div 
-                                key={chat.id} 
-                                className={`p-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center group ${
-                                    activeChatId === chat.id ? 'bg-blue-50' : ''
-                                }`}
+                            <div
+                                key={chat.id}
+                                className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group ${activeChatId === chat.id ? 'bg-black text-white' : ''
+                                    }`}
                                 onClick={() => loadChat(chat.id)}
                             >
                                 <p className="truncate text-sm">{chat.title}</p>
-                                <button 
+                                <button
                                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded-full"
                                     onClick={(e) => deleteChat(chat.id, e)}
                                 >
@@ -381,7 +382,7 @@ const ChatPage = () => {
                 </SidebarContent>
             </ChatSidebar>
 
-            <main className="flex flex-col justify-between w-full h-screen overflow-hidden">
+            <main className="flex flex-col justify-between w-full h-[80vh] overflow-hidden">
                 <div className="flex-grow overflow-y-auto p-4 pb-16">
                     <div className="max-w-3xl mx-auto w-full">
                         {!user ? (
@@ -395,17 +396,16 @@ const ChatPage = () => {
                         ) : chatMessages.length === 0 ? (
                             <div className="flex items-center justify-center h-full">
                                 <div className="text-center text-gray-500">
-                                    <Sparkle className="mx-auto mb-4" size={32} />
-                                    <h2 className="text-2xl font-semibold mb-2">Start a new conversation</h2>
+                                    <Sparkles className="mx-auto mb-4" size={64} />
+                                    <p className="text-3xl font-semibold mb-2">How can I help you today <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-800 to-indigo-700 font-bold">{user?.firstName}</span></p>
                                     <p>Type a message below to begin chatting with the AI</p>
                                 </div>
                             </div>
                         ) : (
                             chatMessages.map((chat, index) => (
-                                <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${
-                                    chat.role === "user"
+                                <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${chat.role === "user"
                                         ? 'bg-neutral-50 ml-auto max-w-md border border-gray-300'
-                                        : 'text-gray-800 max-w-2xl'
+                                        : 'text-gray-800 max-w-5xl right-2'
                                     }`}>
                                     <div className="flex-shrink-0 mt-1">
                                         {chat.role === "user" ? (
@@ -422,10 +422,29 @@ const ChatPage = () => {
                                     </div>
                                     <div className="flex-grow prose prose-sm max-w-none">
                                         {chat.role === "model" ? (
-                                            <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll border border-gray-300 p-3 rounded">
-                                                <Markdown>
-                                                    {chat.content}
-                                                </Markdown>
+                                            <div>
+                                                <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll border border-gray-300 p-3 rounded">
+                                                    <Markdown>
+                                                        {chat.content}
+                                                    </Markdown>
+                                                </div>
+                                                <br />
+                                                <div className="flex gap-3">
+                                                    <Copy size={18} className="cursor-pointer" onClick={() => {
+                                                        navigator.clipboard.writeText(chat.content);
+                                                        toast.success("Copied Successfuly!")
+                                                    }} />
+                                                    <Save size={18} className="cursor-pointer" onCanPlay={async () => {
+                                                        const { error } = await supabase.from("documents").insert({
+                                                            'user_id': user?.id,
+                                                            'title': "New Document",
+                                                            'content': chat.content,
+                                                        });
+
+                                                        if (!error) { toast.success("Saved to Documents Successfuly!") }
+                                                        else (error: any) => { toast.error(error) }
+                                                    }} />
+                                                </div>
                                             </div>
                                         ) : (
                                             chat.content
@@ -446,7 +465,7 @@ const ChatPage = () => {
                     </div>
                 </div>
 
-                <div className="p-2 border-t bg-white fixed bottom-0 left-0 right-0">
+                <div className="p-2 bg-transparent fixed bottom-7 left-0 right-0">
                     <div className="max-w-3xl mx-auto flex gap-2 items-center">
                         {chatMessages.length > 0 && activeChatId === null && user && (
                             <button
@@ -457,10 +476,10 @@ const ChatPage = () => {
                                 <Save size={18} />
                             </button>
                         )}
-                        
+
                         <input
                             type="text"
-                            className="p-3 text-gray-800 border rounded-lg focus:border-blue-700 focus:ring-1 focus:ring-blue-200 focus:outline-none flex-grow transition-all duration-150"
+                            className="p-5 text-gray-800 border rounded-lg focus:border-blue-700 focus:ring-1 bg-white focus:ring-blue-200 focus:outline-none flex-grow transition-all duration-150"
                             placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
@@ -475,9 +494,8 @@ const ChatPage = () => {
                         />
 
                         <button
-                            className={`bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${
-                                (!prompt.trim() || loadingResponse || !user) ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
+                            className={`bg-black text-white rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user) ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                             onClick={() => handleSubmitPrompt(prompt)}
                             disabled={!prompt.trim() || loadingResponse || !user}
                         >

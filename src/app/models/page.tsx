@@ -39,6 +39,8 @@ export default function ModelsPage() {
         } catch (error) {
             console.error('Error deleting model:', error);
         }
+
+        loadModels();
     };
 
     if (loading) {
