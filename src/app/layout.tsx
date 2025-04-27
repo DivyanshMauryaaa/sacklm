@@ -51,11 +51,21 @@ export default function RootLayout({
                   <Link href={"/"}>
                     <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Home</p>
                   </Link>
-                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Organize</p>
-                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Chats</p>
-                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Documents</p>
-                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Models</p>
-                  <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Community</p>
+                  <Link href="/organize">
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Organize</p>
+                  </Link>
+                  <Link href="/chats">
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Chats</p>
+                  </Link>
+                  <Link href="/documents">
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Documents</p>
+                  </Link>
+                  <Link href="/models">
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Models</p>
+                  </Link>
+                  <Link href="/community">
+                    <p className="text-gray-700 font-bold hover:text-blue-600 transition-all duration-200 cursor-pointer text-lg">Community</p>
+                  </Link>
 
                   <UserButton userProfileUrl="/user-profile" userProfileMode="navigation" />
 

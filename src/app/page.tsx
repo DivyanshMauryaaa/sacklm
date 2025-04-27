@@ -45,39 +45,48 @@ export default function Home() {
 
         <div className="flex gap-4">
 
-          <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-            <MessageCircleMore size={32} className="mt-3" />
+          <Link href={"/chats"}>
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <MessageCircleMore size={32} className="mt-3" />
 
-            <div className="h-[70px]"></div>
+              <div className="h-[70px]"></div>
 
-            <p className="font-bold text-2xl mb-3">Chats</p>
-          </div>
-
-
-          <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-            <Paperclip size={32} className="mt-3" />
-
-            <div className="h-[70px]"></div>
-
-            <p className="font-bold text-2xl mb-3">Documents</p>
-          </div>
+              <p className="font-bold text-2xl mb-3">Chats</p>
+            </div>
+          </Link>
 
 
-          <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-            <Box size={32} className="mt-3" />
+          <Link href={"/documents"}>
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <Paperclip size={32} className="mt-3" />
 
-            <div className="h-[70px]"></div>
+              <div className="h-[70px]"></div>
 
-            <p className="font-bold text-2xl mb-3">Models</p>
-          </div>
+              <p className="font-bold text-2xl mb-3">Documents</p>
+            </div>
+          </Link>
 
-          <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-            <Folder size={32} className="mt-3" />
 
-            <div className="h-[70px]"></div>
+          <Link href={"/models"}>
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <Box size={32} className="mt-3" />
 
-            <p className="font-bold text-2xl mb-3">Organize</p>
-          </div>
+              <div className="h-[70px]"></div>
+
+              <p className="font-bold text-2xl mb-3">Models</p>
+            </div>
+          </Link>
+
+          <Link href={"/organize"}>
+
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <Folder size={32} className="mt-3" />
+
+              <div className="h-[70px]"></div>
+
+              <p className="font-bold text-2xl mb-3">Organize</p>
+            </div>
+          </Link>
 
         </div>
 
@@ -85,11 +94,11 @@ export default function Home() {
 
         <div className="flex gap-2">
           <Link href="/community">
-            <p className="text-gray-600 hover:underline"><li>Community</li></p>
+            <p className="text-gray-600 hover:underline">Community</p>
           </Link>
 
           <Link href={"/devapi"}>
-            <p className="text-gray-600 hover:underline"><li>API</li></p>
+            <p className="text-gray-600 hover:underline">API</p>
           </Link>
         </div>
 
