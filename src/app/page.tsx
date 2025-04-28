@@ -2,7 +2,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, Edit, Folder, MessageCircleMore, Paperclip } from "lucide-react";
+import { Box, Edit, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -43,7 +43,7 @@ export default function Home() {
         <br />
         <br />
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 overflow-x-scroll">
 
           <Link href={"/chats"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
@@ -58,7 +58,7 @@ export default function Home() {
 
           <Link href={"/documents"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <Paperclip size={32} className="mt-3" />
+              <FileIcon size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
 
@@ -103,6 +103,16 @@ export default function Home() {
         </div>
 
       </div>
+
+      <br />
+
+      <div className="flex gap-3">
+        <p className="font-bold text-2xl">Recents</p>
+
+        
+
+      </div>
+
 
       <br />
 

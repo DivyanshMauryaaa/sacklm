@@ -6,13 +6,11 @@ import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
-import { createClient } from '@supabase/supabase-js';
 import { ToastContainer, toast } from 'react-toast';
- 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-)
+import { supabase } from "@/lib/supabase";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const ChatPage = () => {
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -22,6 +20,9 @@ const ChatPage = () => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const { user } = useUser();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [documentTitle, setDocumentTitle] = useState("");
+    const [documentToSave, setDocumentToSave] = useState<{ title: string, content: string } | null>(null);
 
     // Load chat history from Supabase on initial render
     useEffect(() => {
@@ -346,8 +347,19 @@ const ChatPage = () => {
             }
         ])
 
-        if (!error) toast.success("New document Saved Successfuly");
-        else toast.error(error.message);
+        if (!error) {
+            toast.success("New document Saved Successfully");
+            setIsSaveDialogOpen(false);
+            setDocumentTitle("");
+            setDocumentToSave(null);
+        } else {
+            toast.error(error.message);
+        }
+    }
+
+    const handleSaveClick = (content: string) => {
+        setDocumentToSave({ title: "", content });
+        setIsSaveDialogOpen(true);
     }
 
     return (
@@ -447,13 +459,10 @@ const ChatPage = () => {
                                                 <div className="flex gap-3">
                                                     <Copy size={18} className="cursor-pointer" onClick={() => {
                                                         navigator.clipboard.writeText(chat.content);
-                                                        toast.success("Copied Successfuly!")
+                                                        toast.success("Copied Successfully!")
                                                     }} />
                                                     <Save size={18} className="cursor-pointer" onClick={() => {
-                                                        saveDocument(
-                                                            "New Document",
-                                                            chat.content
-                                                        )
+                                                        handleSaveClick(chat.content)
                                                     }} />
                                                 </div>
                                             </div>
@@ -515,6 +524,49 @@ const ChatPage = () => {
                     </div>
                 </div>
             </main>
+
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Save Document</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <label htmlFor="title" className="text-sm font-medium">
+                                Document Title
+                            </label>
+                            <Input
+                                id="title"
+                                value={documentTitle}
+                                onChange={(e) => setDocumentTitle(e.target.value)}
+                                placeholder="Enter document title"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsSaveDialogOpen(false);
+                                setDocumentTitle("");
+                                setDocumentToSave(null);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (documentToSave) {
+                                    saveDocument(documentTitle || "Untitled Document", documentToSave.content);
+                                }
+                            }}
+                            disabled={!documentTitle.trim()}
+                        >
+                            Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </SidebarProvider>
     );
 };
