@@ -2,7 +2,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, Edit, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
+import { Box, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
