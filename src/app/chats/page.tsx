@@ -185,6 +185,8 @@ const ChatPage = () => {
     };
 
     const deleteChat = async (chatId: string, e: React.MouseEvent) => {
+        // Prevent the click event from bubbling up to parent elements
+        // This ensures the chat deletion doesn't trigger the chat selection
         e.stopPropagation();
 
         if (!user) return;
@@ -335,6 +337,19 @@ const ChatPage = () => {
         }
     };
 
+    const saveDocument = async (title: string, content: string) => {
+        const { error } = await supabase.from('documents').insert([
+            {
+                title: title,
+                content: content,
+                user_id: user?.id
+            }
+        ])
+
+        if (!error) toast.success("New document Saved Successfuly");
+        else toast.error(error.message);
+    }
+
     return (
         <SidebarProvider className="w-full h-screen flex overflow-hidden">
             <ToastContainer position="bottom-right" delay={1000}></ToastContainer>
@@ -434,15 +449,11 @@ const ChatPage = () => {
                                                         navigator.clipboard.writeText(chat.content);
                                                         toast.success("Copied Successfuly!")
                                                     }} />
-                                                    <Save size={18} className="cursor-pointer" onCanPlay={async () => {
-                                                        const { error } = await supabase.from("documents").insert({
-                                                            'user_id': user?.id,
-                                                            'title': "New Document",
-                                                            'content': chat.content,
-                                                        });
-
-                                                        if (!error) { toast.success("Saved to Documents Successfuly!") }
-                                                        else (error: any) => { toast.error(error) }
+                                                    <Save size={18} className="cursor-pointer" onClick={() => {
+                                                        saveDocument(
+                                                            "New Document",
+                                                            chat.content
+                                                        )
                                                     }} />
                                                 </div>
                                             </div>
@@ -465,7 +476,7 @@ const ChatPage = () => {
                     </div>
                 </div>
 
-                <div className="p-2 bg-transparent fixed bottom-7 left-0 right-0">
+                <div className="p-1 bg-transparent fixed bottom-7 left-0 right-0">
                     <div className="max-w-3xl mx-auto flex gap-2 items-center">
                         {chatMessages.length > 0 && activeChatId === null && user && (
                             <button
@@ -479,7 +490,7 @@ const ChatPage = () => {
 
                         <input
                             type="text"
-                            className="p-5 text-gray-800 border rounded-lg focus:border-blue-700 focus:ring-1 bg-white focus:ring-blue-200 focus:outline-none flex-grow transition-all duration-150"
+                            className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all duration-150"
                             placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
