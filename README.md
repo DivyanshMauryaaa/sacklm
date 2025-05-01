@@ -110,5 +110,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 If you have any questions or need help, feel free to reach out:
 
-- [Your Name](mailto:your.email@example.com)
-- GitHub: [yourusername](https://github.com/yourusername)
+- [Divyansh Maurya](mailto:studydivyansh56@gmail.com)
+- GitHub: [divyanshMauryaaa](https://github.com/divyanshMauryaaa)
