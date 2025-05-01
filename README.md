@@ -36,13 +36,13 @@ Make sure you have the following installed:
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/SackLM.git
+    git clone https://github.com/divyanshMauryaaa/Sacklm.git
     ```
 
 2. Navigate to the project directory:
 
     ```bash
-    cd SackLM
+    cd Sacklm
     ```
 
 3. Install dependencies:
@@ -52,14 +52,24 @@ Make sure you have the following installed:
     ```
 
 4. Configure environment variables:
-    - Create a `.env.local` file in the root of your project.
+    - Create a `.env` file in the root of your project.
     - Add your **Supabase** and **Clerk** credentials.
 
     ```env
-    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-    NEXT_PUBLIC_CLERK_FRONTEND_API=your-clerk-frontend-api
-    CLERK_API_KEY=your-clerk-api-key
+    #Database Settings for Supabase
+    NEXT_PUBLIC_SUPABASE_URL=
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=
+    
+    #Auth framework credentials for clerk
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+    CLERK_SECRET_KEY=
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
+    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
+    
+    #Google AI API config
+    GOOGLE_GEMINI_API_KEY=
     ```
 
 5. Run the application:
@@ -85,17 +95,9 @@ Make sure you have the following installed:
     1. Create folders to organize your chats and documents for easy navigation.
     2. Use tags and filters to quickly find specific content.
 
-## Contributing
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -am 'Add new feature'`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Create a new Pull Request.
-
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under some restrictions. See `LICENSE` for more information.
 
 ## Acknowledgements
 
