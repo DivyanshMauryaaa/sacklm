@@ -90,7 +90,6 @@ export default function Page() {
                             <div
                                 key={doc.id}
                                 className="p-4 border border-gray-300 rounded-xl hover:border-black hover:ring-1 hover:ring-black cursor-pointer transition-all duration-150 w-[400px] h-[240px]"
-                                onClick={() => toggleEditor(doc)}
                             >
                                 <div className="flex justify-between">
                                     <Trash2
@@ -101,7 +100,7 @@ export default function Page() {
                                 </div>
                                 <hr className="my-2" />
 
-                                <div className="mt-1">
+                                <div className="mt-1" onClick={() => toggleEditor(doc)}>
                                     <p className="font-sm max-h-[100px] h-[100px] overflow-hidden text-gray-400">
                                         {doc.content}
                                     </p>
@@ -135,7 +134,7 @@ export default function Page() {
                     open={editorOpen} 
                     onOpenChange={setEditorOpen}
                 >
-                    <DialogTitle className="text-2xl font-bold p-4">{editorTitle}</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold p-4"></DialogTitle>
                     <DialogContent className="overflow-y-auto max-h-[500px] p-4">
                         <div className="prose max-w-none">
                             <Markdown>{editorContent}</Markdown>

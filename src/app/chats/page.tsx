@@ -1,7 +1,7 @@
 'use client'
 
 import { ChatSidebar, SidebarContent, SidebarHeader, SidebarProvider } from "@/components/ui/sidebar";
-import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy } from "lucide-react";
+import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import Image from "next/image";
@@ -11,6 +11,14 @@ import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
 
 const ChatPage = () => {
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -23,11 +31,22 @@ const ChatPage = () => {
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [documentTitle, setDocumentTitle] = useState("");
     const [documentToSave, setDocumentToSave] = useState<{ title: string, content: string } | null>(null);
+    const [selectedModel, setSelectedModel] = useState('');
+    const [modelInstruction, setModelInstruction] = useState('');
+    const [userModels, setUserModels] = useState<any>([]);
+
+    const fetchModels = async () => {
+        const { data, error } = await supabase.from('models').select('*').eq('user_id', user?.id);
+
+        if (error) console.error(error.message);
+        if (!error) setUserModels(data);
+    }
 
     // Load chat history from Supabase on initial render
     useEffect(() => {
         if (user) {
             fetchChatHistory();
+            fetchModels();
         }
     }, [user]);
 
@@ -240,7 +259,7 @@ const ChatPage = () => {
                 contents: [
                     {
                         parts: [
-                            { text: `You are SackLM. other yk wht u are. ${promptWithContext}` }, //Used short form type of text in prompt for least possible given extra prompt
+                            { text: `You are SackLM. ${modelInstruction}. other yk wht u are. ${promptWithContext}` }, //Used short form type of text in prompt for least possible given extra prompt
                         ],
                     },
                 ],
@@ -410,7 +429,7 @@ const ChatPage = () => {
             </ChatSidebar>
 
             <main className="flex flex-col justify-between w-full h-[80vh] overflow-hidden">
-                <div className="flex-grow overflow-y-auto p-4 pb-16">
+                <div className="flex-grow overflow-y-auto p-4 pb-6">
                     <div className="max-w-3xl mx-auto w-full">
                         {!user ? (
                             <div className="flex items-center justify-center h-full">
@@ -430,45 +449,48 @@ const ChatPage = () => {
                             </div>
                         ) : (
                             chatMessages.map((chat, index) => (
-                                <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${chat.role === "user"
-                                        ? 'bg-neutral-50 ml-auto max-w-md border border-gray-300'
-                                        : 'text-gray-800 max-w-5xl right-2'
-                                    }`}>
-                                    <div className="flex-shrink-0 mt-1">
+                                <div key={index}>
+                                    <div className="flex-shrink mt-1">
                                         {chat.role === "user" ? (
-                                            <Image
-                                                src={user?.imageUrl || "https://via.placeholder.com/30"}
-                                                height={22}
-                                                width={22}
-                                                alt="User Profile"
-                                                className="rounded-full"
-                                            />
+                                            // <Image
+                                            //     src={user?.imageUrl || "https://via.placeholder.com/30"}
+                                            //     height={22}
+                                            //     width={22}
+                                            //     alt="User Profile"
+                                            //     className="rounded-full"
+                                            // />
+                                            <p></p>
                                         ) : (
-                                            <Sparkle size={22} className="text-blue-500" />
+                                            <Sparkle size={22} className="text-blue-700" />
                                         )}
                                     </div>
-                                    <div className="flex-grow prose prose-sm max-w-none">
-                                        {chat.role === "model" ? (
-                                            <div>
-                                                <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll border border-gray-300 p-3 rounded">
-                                                    <Markdown>
-                                                        {chat.content}
-                                                    </Markdown>
+                                    <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${chat.role === "user"
+                                        ? 'bg-black ml-auto max-w-md border text-white'
+                                        : 'text-gray-800 max-w-5xl right-2'
+                                        }`}>
+                                        <div className="flex-grow prose prose-sm max-w-none">
+                                            {chat.role === "model" ? (
+                                                <div>
+                                                    <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll border border-gray-300 p-3 rounded">
+                                                        <Markdown>
+                                                            {chat.content}
+                                                        </Markdown>
+                                                    </div>
+                                                    <br />
+                                                    <div className="flex gap-3">
+                                                        <Copy size={18} className="cursor-pointer" onClick={() => {
+                                                            navigator.clipboard.writeText(chat.content);
+                                                            toast.success("Copied Successfully!")
+                                                        }} />
+                                                        <Save size={18} className="cursor-pointer" onClick={() => {
+                                                            handleSaveClick(chat.content)
+                                                        }} />
+                                                    </div>
                                                 </div>
-                                                <br />
-                                                <div className="flex gap-3">
-                                                    <Copy size={18} className="cursor-pointer" onClick={() => {
-                                                        navigator.clipboard.writeText(chat.content);
-                                                        toast.success("Copied Successfully!")
-                                                    }} />
-                                                    <Save size={18} className="cursor-pointer" onClick={() => {
-                                                        handleSaveClick(chat.content)
-                                                    }} />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            chat.content
-                                        )}
+                                            ) : (
+                                                chat.content
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -485,7 +507,7 @@ const ChatPage = () => {
                     </div>
                 </div>
 
-                <div className="p-1 bg-transparent fixed bottom-7 left-0 right-0">
+                <div className="p-1 bg-transparent fixed bottom-10 left-0 right-0">
                     <div className="max-w-3xl mx-auto flex gap-2 items-center">
                         {chatMessages.length > 0 && activeChatId === null && user && (
                             <button
@@ -496,6 +518,19 @@ const ChatPage = () => {
                                 <Save size={18} />
                             </button>
                         )}
+
+                        <Select onValueChange={(value) => setModelInstruction(value)} defaultValue=" ">
+                            <SelectTrigger className="w-[130px] flex">
+                                <Box /><SelectValue placeholder="Model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value=" " key={'default'}>Default</SelectItem>
+                                {userModels.map((model: any) => (
+                                    <SelectItem key={model.id} value={model.instructions}>{model.title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
 
                         <input
                             type="text"

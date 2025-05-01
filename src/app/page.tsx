@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Box, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [time, setTime] = useState('');
+  const [recents, setRecents] = useState<any>([]);
   const { user } = useUser();
 
   useEffect(() => {
@@ -25,6 +27,11 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const fetchRecents = async () => {
+    const { data, error } = await supabase.from('documents').select('3').eq('user_id', user?.id);
+  
+  }
 
   return (
     <div>
