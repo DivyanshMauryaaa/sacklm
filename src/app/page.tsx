@@ -1,4 +1,5 @@
 'use client';
+
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -9,6 +10,8 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const [time, setTime] = useState('');
   const [recents, setRecents] = useState<any>([]);
+  const [recentChats, setRecentChats] = useState<any>([]);
+
   const { user } = useUser();
 
   useEffect(() => {
@@ -29,9 +32,23 @@ export default function Home() {
   }, []);
 
   const fetchRecents = async () => {
-    const { data, error } = await supabase.from('documents').select('3').eq('user_id', user?.id);
-  
+    const { data, error } = await supabase.from('documents').select('*').eq('user_id', user?.id).limit(3);
+
+    if (!error) setRecents(data);
   }
+
+  const fetchRecentChats = async () => {
+    const { data, error } = await supabase.from('chats').select('*').eq('user_id', user?.id).limit(3);
+
+    if (!error) setRecentChats(data);
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchRecents();
+      fetchRecentChats();
+    }
+  }, [user]);
 
   return (
     <div>
@@ -50,7 +67,7 @@ export default function Home() {
         <br />
         <br />
 
-        <div className="flex gap-4 overflow-x-scroll">
+        <div className="flex gap-4 flex-wrap">
 
           <Link href={"/chats"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
@@ -113,14 +130,39 @@ export default function Home() {
 
       <br />
 
-      <div className="flex gap-3">
+      <div>
         <p className="font-bold text-2xl">Recents</p>
+        <br />
 
-        
+        <div className="flex gap-3 flex-wrap">
 
+          {recents.map((data: any) => (
+            <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
+              <FileIcon size={24} />
+              <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
+            </div>
+          ))}
+
+        </div>
+
+        <br />
+
+        <div className="flex gap-3 flex-wrap">
+          {recentChats.map((data: any) => (
+            <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
+              <MessageCircleMore size={24} />
+              <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
+            </div>
+          ))}
+        </div>
       </div>
 
 
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
       <br />
 
     </div>

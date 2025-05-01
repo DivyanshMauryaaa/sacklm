@@ -4,7 +4,7 @@ import { ChatSidebar, SidebarContent, SidebarHeader, SidebarProvider } from "@/c
 import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
-import Image from "next/image";
+// import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { ToastContainer, toast } from 'react-toast';
 import { supabase } from "@/lib/supabase";
