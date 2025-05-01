@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SackLM: AI-Powered Chatbot with Customizable Features
 
-## Getting Started
+SackLM is an innovative AI app designed to enhance chatbot experiences. It offers powerful features like response saving in documents, custom models, and easy organization for chats, documents, and more! 
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Response Saving in Documents:** Save your responses directly to documents for future reference and better organization.
+- **Custom Models:** Personalize your chatbot's behavior and responses using custom models.
+- **Chat & Document Organization:** Keep your chats and documents organized for easy access and efficient workflow.
+- **Advanced AI Processing:** Powered by cutting-edge AI technology from **Google AI Studio** for accurate and context-aware responses.
+- **Personalization:** Tailor the app’s responses and features to your specific needs using custom models.
+- **Authentication & User Management:** Secure user authentication powered by **Clerk**.
+- **Real-time Data:** Built with **Supabase** for real-time data and efficient backend management.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend:** [Next.js 15](https://nextjs.org/)
+- **UI:** [Tailwind CSS](https://tailwindcss.com/)
+- **AI Processing:** [Google AI Studio](https://cloud.google.com/ai)
+- **Authentication & User Management:** [Clerk](https://clerk.dev/)
+- **Backend & Database:** [Supabase](https://supabase.io/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Installation
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+Make sure you have the following installed:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Node.js](https://nodejs.org/)
+- [npm](https://www.npmjs.com/)
+- [Supabase Account](https://app.supabase.io/)
+- [Clerk Account](https://clerk.dev/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Steps
 
-## Deploy on Vercel
+1. Clone the repository:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    ```bash
+    git clone https://github.com/yourusername/SackLM.git
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Navigate to the project directory:
+
+    ```bash
+    cd SackLM
+    ```
+
+3. Install dependencies:
+
+    ```bash
+    npm install
+    ```
+
+4. Configure environment variables:
+    - Create a `.env.local` file in the root of your project.
+    - Add your **Supabase** and **Clerk** credentials.
+
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+    NEXT_PUBLIC_CLERK_FRONTEND_API=your-clerk-frontend-api
+    CLERK_API_KEY=your-clerk-api-key
+    ```
+
+5. Run the application:
+
+    ```bash
+    npm run dev
+    ```
+
+6. Open your browser at [http://localhost:3000](http://localhost:3000) to start using the app.
+
+## Usage
+
+- **Creating and Managing Custom Models:**
+    1. Navigate to the "Models" section in the app.
+    2. Create a new model, input the necessary parameters, and hit "Save".
+    3. Once your model is created, you can start personalizing responses according to your preferences.
+
+- **Saving and Organizing Responses:**
+    1. While chatting, you can save responses directly into your document.
+    2. Access and manage your saved responses via the "Documents" section.
+
+- **Organizing Chats and Documents:**
+    1. Create folders to organize your chats and documents for easy navigation.
+    2. Use tags and filters to quickly find specific content.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/your-feature`).
+3. Commit your changes (`git commit -am 'Add new feature'`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Create a new Pull Request.
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Acknowledgements
+
+- **AI Models** from [Google AI Studio](https://cloud.google.com/ai)
+- **Authentication & User Management** via [Clerk](https://clerk.dev/)
+- **Backend & Real-time Database** powered by [Supabase](https://supabase.io/)
+- Libraries and frameworks used:
+    - [Next.js 15](https://nextjs.org/)
+    - [Tailwind CSS](https://tailwindcss.com/)
+
+## Contact
+
+If you have any questions or need help, feel free to reach out:
+
+- [Your Name](mailto:your.email@example.com)
+- GitHub: [yourusername](https://github.com/yourusername)
