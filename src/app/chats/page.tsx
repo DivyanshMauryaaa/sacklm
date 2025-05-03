@@ -247,7 +247,7 @@ const ChatPage = () => {
         try {
             // Create a context from previous messages (last few exchanges)
             const conversationContext = chatMessages
-                .slice(-6) // Take last 3 exchanges (6 messages) for context
+                .slice(-6) // Take last 6 messages (for context)
                 .map(msg => msg.content)
                 .join("\n\n");
 
@@ -255,37 +255,28 @@ const ChatPage = () => {
                 ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}\nAI:`
                 : userPrompt;
 
-            const payload = {
-                contents: [
-                    {
-                        parts: [
-                            { text: `You are SackLM. ${modelInstruction}. other yk wht u are. ${promptWithContext}` }, //Used short form type of text in prompt for least possible given extra prompt
-                        ],
-                    },
-                ],
-            };
+            // Add instructions parameter for custom models (new feature)
+            const instructions = modelInstruction || "";  // Ensure this is passed to the API correctly.
 
-            // Use environment variable for API key in production
-            const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyA7cKRnNEj6YXyA6L4IKckwox-8YtVciKw";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Build the request URL, using the response format you provided
+            const url = new URL(`http://127.0.0.1:5000/generate?model=google&prompt=${promptWithContext}&instructions=${instructions}`);
+            url.searchParams.append("model", "gemini-2.0-flash");
+            url.searchParams.append("prompt", encodeURIComponent(promptWithContext));
+            url.searchParams.append("instructions", encodeURIComponent(instructions));
 
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            };
-
-            const response = await fetch(url, options);
+            // Fetch response from Flask API
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}`);
             }
 
             const data = await response.json();
-            const content = data.candidates[0].content.parts[0].text;
 
+            // Extracting the response from the API's candidates (ensure it's correctly parsed)
+            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from the AI";
+
+            // Update messages with the AI's response
             const finalMessages = [
                 ...updatedMessages,
                 { role: "model", content: content }
@@ -293,11 +284,9 @@ const ChatPage = () => {
 
             setChatMessages(finalMessages);
 
-            // Auto-save chat after response
+            // Auto-save chat after response (just as in your existing code)
             if (user) {
-                // Use timeout to ensure state is updated before saving
                 setTimeout(async () => {
-                    // Save with the updated messages
                     if (activeChatId) {
                         // Update existing chat
                         const { error } = await supabase
@@ -311,7 +300,6 @@ const ChatPage = () => {
                         if (error) {
                             console.error('Auto-save update error:', error);
                         } else {
-                            // Update local state to ensure it's in sync
                             setChatHistory(prev => prev.map(chat =>
                                 chat.id === activeChatId
                                     ? { ...chat, messages: finalMessages }
@@ -319,7 +307,7 @@ const ChatPage = () => {
                             ));
                         }
                     } else {
-                        // This is a new chat, save it
+                        // Save as new chat
                         const title = userPrompt.length > 20
                             ? userPrompt.slice(0, 20) + "..."
                             : userPrompt;
@@ -356,6 +344,7 @@ const ChatPage = () => {
             setPrompt("");
         }
     };
+
 
     const saveDocument = async (title: string, content: string) => {
         const { error } = await supabase.from('documents').insert([
@@ -461,7 +450,8 @@ const ChatPage = () => {
                                             // />
                                             <p></p>
                                         ) : (
-                                            <Sparkle size={22} className="text-blue-700" />
+                                            // <Sparkle size={22} className="text-blue-700" />
+                                            <p></p>
                                         )}
                                     </div>
                                     <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${chat.role === "user"
@@ -471,7 +461,7 @@ const ChatPage = () => {
                                         <div className="flex-grow prose prose-sm max-w-none">
                                             {chat.role === "model" ? (
                                                 <div>
-                                                    <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll border border-gray-300 p-3 rounded">
+                                                    <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll p-3 rounded">
                                                         <Markdown>
                                                             {chat.content}
                                                         </Markdown>

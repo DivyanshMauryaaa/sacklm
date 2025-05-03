@@ -51,9 +51,9 @@ export default function RootLayout({
                   <Link href={"/"}>
                     <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Home</p>
                   </Link>
-                  <Link href="/organize">
+                  {/* <Link href="/organize">
                     <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Organize</p>
-                  </Link>
+                  </Link> */}
                   <Link href="/chats">
                     <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Chats</p>
                   </Link>

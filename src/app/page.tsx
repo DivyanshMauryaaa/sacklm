@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
+import { Box, Clock, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -63,7 +63,7 @@ export default function Home() {
         <p className="text-[70px] font-[600] text-gray-700">Hello, <span className="
           bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 font-bold
         ">{user?.firstName || "Loading..."}</span></p>
-        <p className="text-[30px] font-bold text-gray-700">{time}</p>
+        <p className="text-[30px] font-bold text-gray-700 flex gap-1"><Clock size={32} /> {time}</p>
         <br />
         <br />
 
@@ -101,7 +101,7 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href={"/organize"}>
+          {/* <Link href={"/organize"}>
 
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
               <Folder size={32} className="mt-3" />
@@ -110,7 +110,7 @@ export default function Home() {
 
               <p className="font-bold text-2xl mb-3">Organize</p>
             </div>
-          </Link>
+          </Link> */}
 
         </div>
 
@@ -139,7 +139,7 @@ export default function Home() {
           {recents.map((data: any) => (
             <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
               <FileIcon size={24} />
-              <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
+              <Link href={'/documents'}><p className="font-bold text-2xl mt-2 hover:text-gray-500">{data.title}</p></Link>
             </div>
           ))}
 
@@ -149,12 +149,10 @@ export default function Home() {
 
         <div className="flex gap-3 flex-wrap">
           {recentChats.map((data: any) => (
-            <Link href={'/chats'}>
-              <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
-                <MessageCircleMore size={24} />
-                <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
-              </div>
-            </Link>
+            <div key={data.id} className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] ">
+              <MessageCircleMore size={24} />
+              <Link href={'/chats'}><p className="font-bold text-2xl mt-2 hover:text-gray-500">{data.title}</p></Link>
+            </div>
           ))}
         </div>
       </div>
