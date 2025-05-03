@@ -149,10 +149,12 @@ export default function Home() {
 
         <div className="flex gap-3 flex-wrap">
           {recentChats.map((data: any) => (
-            <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
-              <MessageCircleMore size={24} />
-              <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
-            </div>
+            <Link href={'/chats'}>
+              <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
+                <MessageCircleMore size={24} />
+                <Link href={'/documents'}><p className="font-bold text-2xl mt-2">{data.title}</p></Link>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
