@@ -1,1 +1,0 @@
-run this python file for API requests with Google/claude APIs
