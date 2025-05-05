@@ -5,11 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from '@clerk/nextjs';
 import { toast, ToastContainer } from 'react-toast';
 import Image from 'next/image';
-import { Trash2 } from 'lucide-react';
+import { PencilLine, Trash2 } from 'lucide-react';
 import DocumentEditor from './editor/page';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import Markdown from 'react-markdown';
+import Link from 'next/link';
+
 
 interface Document {
     id?: string;
@@ -79,7 +81,13 @@ export default function Page() {
 
     return (
         <div className="p-6">
-            <p className="text-3xl font-bold mb-4">Documents</p>
+            <div className="mb-4 flex justify-between">
+                <p className='text-3xl font-bold '>Documents</p> 
+
+                <Link href={'/documents/editor'}>
+                    <p className='flex gap-2 p-4 hover:bg-gray-200 cursor-pointer rounded-lg'><PencilLine /> Editor</p>
+                </Link>
+            </div>
 
             <ToastContainer position="bottom-right" />
 
@@ -89,7 +97,8 @@ export default function Page() {
                         
                             <div
                                 key={doc.id}
-                                className="p-4 border border-gray-300 rounded-xl hover:border-black hover:ring-1 hover:ring-black cursor-pointer transition-all duration-150 w-[400px] h-[240px]"
+                                className="p-4 border overflow-y-hidden border-gray-300 rounded-xl hover:border-black hover:ring-1 hover:ring-black cursor-pointer transition-all duration-150 w-[400px] h-[240px]"
+                                
                             >
                                 <div className="flex justify-between">
                                     <Trash2

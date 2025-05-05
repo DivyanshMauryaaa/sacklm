@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Markdown from 'react-markdown';
+import { useUser } from '@clerk/nextjs';
 
 interface Document {
   id?: string;
@@ -16,6 +17,7 @@ const DocumentEditor = ({ document }: { document?: Document }) => {
   const [content, setContent] = useState(document?.content || 'Get Started...');
   const [preview, setPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useUser();
 
   // Update content when document changes
   useEffect(() => {
@@ -212,7 +214,7 @@ const DocumentEditor = ({ document }: { document?: Document }) => {
           .insert({
             title,
             content,
-            user_id: document?.user_id || 'current-user-id'
+            user_id: document?.user_id || user?.id
           });
         
         if (error) throw error;

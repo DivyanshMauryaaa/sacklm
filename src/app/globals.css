@@ -3,6 +3,18 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Styles for selected text */
+::selection {
+  background-color: black;
+  color: white;
+}
+
+/* For older browsers (e.g., IE8) - fallback, not critical */
+::-moz-selection {
+  background-color: black;
+  color: white;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -116,6 +128,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

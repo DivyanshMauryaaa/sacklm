@@ -1,7 +1,7 @@
 'use client'
 
 import { ChatSidebar, SidebarContent, SidebarHeader, SidebarProvider } from "@/components/ui/sidebar";
-import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box } from "lucide-react";
+import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box, Code, Pencil, Plane } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 // import Image from "next/image";
@@ -31,7 +31,6 @@ const ChatPage = () => {
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [documentTitle, setDocumentTitle] = useState("");
     const [documentToSave, setDocumentToSave] = useState<{ title: string, content: string } | null>(null);
-    const [selectedModel, setSelectedModel] = useState('');
     const [modelInstruction, setModelInstruction] = useState('');
     const [userModels, setUserModels] = useState<any>([]);
 
@@ -247,12 +246,12 @@ const ChatPage = () => {
         try {
             // Create a context from previous messages (last few exchanges)
             const conversationContext = chatMessages
-                .slice(-6) // Take last 6 messages (for context)
+                .slice(-7) // Take last 6 messages (for context)
                 .map(msg => msg.content)
                 .join("\n\n");
 
             const promptWithContext = conversationContext
-                ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}\nAI:`
+                ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}\n`
                 : userPrompt;
 
             // Add instructions parameter for custom models (new feature)
@@ -260,9 +259,9 @@ const ChatPage = () => {
 
             // Build the request URL, using the response format you provided
             const url = new URL(`http://127.0.0.1:5000/generate?model=google&prompt=${promptWithContext}&instructions=${instructions}`);
-            url.searchParams.append("model", "gemini-2.0-flash");
             url.searchParams.append("prompt", encodeURIComponent(promptWithContext));
             url.searchParams.append("instructions", encodeURIComponent(instructions));
+
 
             // Fetch response from Flask API
             const response = await fetch(url);
@@ -434,6 +433,37 @@ const ChatPage = () => {
                                     <Sparkles className="mx-auto mb-4" size={64} />
                                     <p className="text-3xl font-semibold mb-2">How can I help you today <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-800 to-indigo-700 font-bold">{user?.firstName}</span></p>
                                     <p>Type a message below to begin chatting with the AI</p>
+                                    <br />
+                                    <div className="flex gap-3">
+
+                                        <div 
+                                            onClick={() => setPrompt("Help me solve a python problem:  ")}
+                                            className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
+                                            
+                                            <Code size={32} />
+                                            <br />
+                                            <p className="text-black font-[600] mt-2">Help me solve a coding problem.</p>
+                                        </div>
+
+                                        <div
+                                            onClick={() => setPrompt("Help me write a sick leave letter to my boss. Keep the tone formal ")} 
+                                            className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
+                                            
+                                            <Pencil size={32} />
+                                            <br />
+                                            <p className="text-black font-[600] mt-2">Help me write a document.</p>
+                                        </div>
+
+                                        <div
+                                            onClick={() => setPrompt("Help me plan a trip to ")} 
+                                            className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
+                                            <Plane size={32} />
+                                            <br />
+                                            <p className="text-black font-[600] mt-2">Help me plan my trip.</p>
+                                        </div>
+
+
+                                    </div>
                                 </div>
                             </div>
                         ) : (
