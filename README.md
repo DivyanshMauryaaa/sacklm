@@ -1,3 +1,5 @@
+![Sack LM](https://github.com/user-attachments/assets/1e0c52aa-bbc3-4a86-9896-cb9381cc027a)
+
 # SackLM: AI-Powered Chatbot with Customizable Features
 
 SackLM is an innovative AI app designed to enhance chatbot experiences. It offers powerful features like response saving in documents, custom models, and easy organization for chats, documents, and more! 
