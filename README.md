@@ -16,6 +16,13 @@ SackLM is an innovative AI app designed to enhance chatbot experiences. It offer
 
 ## Tech Stack
 
+<div style="display: flex; gap: 7px;">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2cCqsQpTL5s_KLv9yd4y6iH9C9HRBHQc7sA&s" />
+    <img src="https://miro.medium.com/v2/resize:fit:1400/1*GNPSjvfqSPSHoCMNUk4hPA.png" />
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU-mspyndicMBTk-KdKp96OZiaD2rkYLYzFQ&s" />
+    <img src="https://rdi.berkeley.edu/llm-agents-hackathon/assets/img/google-ai.png" />
+</div>
+
 - **Frontend:** [Next.js 15](https://nextjs.org/)
 - **UI:** [Tailwind CSS](https://tailwindcss.com/)
 - **AI Processing:** [Google AI Studio](https://cloud.google.com/ai)
