@@ -92,11 +92,11 @@ export default function Page() {
                 <p className='text-3xl font-bold '>Documents</p> 
 
                 <Link href={'/documents/editor'}>
-                    <p className='flex gap-2 p-4 hover:bg-gray-200 cursor-pointer rounded-lg'><PencilLine /> Editor</p>
+                    <p className='flex gap-2 p-4 hover:bg-gray-200 cursor-pointer rounded-lg'><PencilLine /> New</p>
                 </Link>
             </div>
 
-            <ToastContainer position="bottom-right" />s
+            <ToastContainer position="bottom-right" />
 
             <div className="flex flex-wrap gap-3">
                 {loadedDocs.length > 0 ? (
@@ -109,14 +109,14 @@ export default function Page() {
                             >
                                 <div className="flex justify-between">
                                     <Trash2
-                                        size={16}
+                                        size={24}
                                         className="cursor-pointer text-red-600"
                                         onClick={() => deleteDoc(doc.id)}
                                     />
 
                                     <PencilLine 
-                                        size={16}
-                                        className='cursor-pointer text-black'
+                                        size={24}
+                                        className='cursor-pointer text-black hover:text-blue-700'
                                         onClick={() => toggleEditor(doc)}
                                     />
                                 </div>

@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Markdown from 'react-markdown';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 interface DocumentEditorProps {
   id: string;
@@ -13,12 +12,16 @@ interface DocumentEditorProps {
 }
 
 const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
-  const router = useRouter();
-  const [editorTitle, setTitle] = useState(title);
-  const [editorContent, setContent] = useState(content);
+  const titleInstance = title;
+  const contentInstance = content;
+  const idInstance = id;
+
+  const [editorTitle, setTitle] = useState(titleInstance);
+  const [editorContent, setContent] = useState(contentInstance);
   const [preview, setPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useUser();
+  const [Saveloader, setSaveloader] = useState(false);
 
   const handleFormat = (formatType: string) => {
     const textarea = textareaRef.current;
@@ -173,6 +176,8 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
   };
 
   const saveDocument = async () => {
+    setSaveloader(true)
+
     try {
       if (id) {
         const { data, error } = await supabase
@@ -200,10 +205,12 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
       console.error('Error saving document:', error);
       alert('Failed to save document.');
     }
+
+    setSaveloader(false)
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4 h-[80vh]">
       <input
         type="text"
         value={editorTitle}
@@ -229,14 +236,14 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
         <button onClick={() => setPreview(!preview)} className="p-2 hover:bg-gray-200 rounded">
           {preview ? 'Edit' : 'Preview'}
         </button>
-        <button onClick={saveDocument} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <button disabled={Saveloader} onClick={saveDocument} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
           Save
         </button>
       </div>
 
-      <div className="border border-gray-300 rounded min-h-96">
+      <div className="rounded min-h-96 h-[60vh]">
         {preview ? (
-          <div className="p-4 prose max-w-none">
+          <div className="p-4 prose max-w-none h-[60vh]">
             <Markdown>{editorContent}</Markdown>
           </div>
         ) : (
@@ -244,7 +251,7 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
             ref={textareaRef}
             value={editorContent}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-96 p-4 font-mono resize-none focus:outline-none"
+            className="w-full h-[60vh] p-4 font-mono resize-none focus:outline-none"
             placeholder="Start writing in Markdown..."
           />
         )}

@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, Clock, FileIcon, Folder, MessageCircleMore, Paperclip } from "lucide-react";
+import { Box, Clock, FileIcon, Folder, MessageCircleMore, Paperclip, WandIcon } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -60,7 +60,10 @@ export default function Home() {
           alt={user?.id || "Profile Pic not available"}
           className="rounded-full cursor-pointer"
         />
-        <p className="text-[70px] font-[600] text-gray-700">Hello, <span className="
+        <p className="text-[70px] font-[600] text-gray-700">
+          {
+          time < "12:00PM" ? 
+            ("Good Morning") : time < "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("🌙 Night time") : "☀️Good Afternoon"} <span className="
           bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 font-bold
         ">{user?.firstName || "Loading..."}</span></p>
         <p className="text-[30px] font-bold text-gray-700 flex gap-1"><Clock size={32} /> {time}</p>
@@ -101,6 +104,16 @@ export default function Home() {
             </div>
           </Link>
 
+          <Link href={"/quick-tools"}>
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <WandIcon size={32} className="mt-3" />
+
+              <div className="h-[70px]"></div>
+
+              <p className="font-bold text-2xl mb-3">Quick Tools</p>
+            </div>
+          </Link>
+
           {/* <Link href={"/organize"}>
 
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
@@ -116,7 +129,7 @@ export default function Home() {
 
         <br />
 
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Link href="/community">
             <p className="text-gray-600 hover:underline">Community</p>
           </Link>
@@ -124,7 +137,7 @@ export default function Home() {
           <Link href={"/devapi"}>
             <p className="text-gray-600 hover:underline">API</p>
           </Link>
-        </div>
+        </div> */}
 
       </div>
 
