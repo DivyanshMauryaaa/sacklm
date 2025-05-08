@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { toast, ToastContainer } from 'react-toast';
 import Image from 'next/image';
 import { PencilLine, Trash2 } from 'lucide-react';
-import DocumentEditor from './editor/page';
+import DocumentEditor from './[id]/page';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import Markdown from 'react-markdown';
@@ -24,16 +24,23 @@ export default function Page() {
     const { user, isLoaded } = useUser(); // <- isLoaded is important
     const [loadedDocs, setLoadedDocs] = useState<any[]>([]);
     const [loadingDocs, setLoadingDocs] = useState(true);
-    const [editorTitle, setEditorTitle] = useState('');
-    const [editorContent, setEditorContent] = useState('');
-
+    const [DialogDocument, setDialogDocument] = useState('');
+    const [DialogDocumentContent, setDialogDocumentContent] = useState('');
+    const [currentDocument, setCurrentDocument] = useState<Document>();
+    
     const [editorOpen, setEditorOpen] = useState(false);
+    const [docOpen, setdocOpen] = useState(false);
+
+    const toggleDoc = (document: Document) => {
+        setdocOpen(!docOpen);
+        
+        setDialogDocument(document.title);
+        setDialogDocumentContent(document.content);
+    }
 
     const toggleEditor = (document: Document) => {
-        setEditorOpen(!editorOpen);
-        
-        setEditorTitle(document.title);
-        setEditorContent(document.content);
+        setCurrentDocument(document);
+        setEditorOpen(!editorOpen)
     }
 
     const loadDocumentsfromDb = async () => {
@@ -89,7 +96,7 @@ export default function Page() {
                 </Link>
             </div>
 
-            <ToastContainer position="bottom-right" />
+            <ToastContainer position="bottom-right" />s
 
             <div className="flex flex-wrap gap-3">
                 {loadedDocs.length > 0 ? (
@@ -106,10 +113,16 @@ export default function Page() {
                                         className="cursor-pointer text-red-600"
                                         onClick={() => deleteDoc(doc.id)}
                                     />
+
+                                    <PencilLine 
+                                        size={16}
+                                        className='cursor-pointer text-black'
+                                        onClick={() => toggleEditor(doc)}
+                                    />
                                 </div>
                                 <hr className="my-2" />
 
-                                <div className="mt-1" onClick={() => toggleEditor(doc)}>
+                                <div className="mt-1" onClick={() => toggleDoc(doc)}>
                                     <p className="font-sm max-h-[100px] h-[100px] overflow-hidden text-gray-400">
                                         {doc.content}
                                     </p>
@@ -140,16 +153,30 @@ export default function Page() {
                 )}
 
                 <Dialog 
+                    open={docOpen} 
+                    onOpenChange={setdocOpen}
+                >
+                    <DialogTitle className="text-2xl font-bold p-4"></DialogTitle>
+                    <DialogContent className="overflow-y-auto max-h-[500px] p-4">
+                        <div className="prose max-w-none">
+                            <Markdown>{DialogDocumentContent}</Markdown>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog 
                     open={editorOpen} 
                     onOpenChange={setEditorOpen}
                 >
                     <DialogTitle className="text-2xl font-bold p-4"></DialogTitle>
                     <DialogContent className="overflow-y-auto max-h-[500px] p-4">
                         <div className="prose max-w-none">
-                            <Markdown>{editorContent}</Markdown>
+                            <DocumentEditor  id={currentDocument?.id || ""} content={currentDocument?.content || ""} title={currentDocument?.title || ""}/>
                         </div>
                     </DialogContent>
                 </Dialog>
+                
+
             </div>
         </div>
     );

@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea";
 
 
 const ChatPage = () => {
@@ -246,7 +247,7 @@ const ChatPage = () => {
         try {
             // Create a context from previous messages (last few exchanges)
             const conversationContext = chatMessages
-                .slice(-7) // Take last 6 messages (for context)
+                .slice(-5) // Take last 6 messages (for context)
                 .map(msg => msg.content)
                 .join("\n\n");
 
@@ -258,7 +259,7 @@ const ChatPage = () => {
             const instructions = modelInstruction || "";  // Ensure this is passed to the API correctly.
 
             // Build the request URL, using the response format you provided
-            const url = new URL(`http://127.0.0.1:5000/generate?model=google&prompt=${promptWithContext}&instructions=${instructions}`);
+            const url = new URL(`http://127.0.0.1:5000/generate?model=google&prompt=${prompt}&instructions=${instructions}&context=${conversationContext}`);
             url.searchParams.append("prompt", encodeURIComponent(promptWithContext));
             url.searchParams.append("instructions", encodeURIComponent(instructions));
 
@@ -534,6 +535,7 @@ const ChatPage = () => {
                                 onClick={saveCurrentChat}
                                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all flex-shrink-0"
                                 title="Save conversation"
+                                
                             >
                                 <Save size={18} />
                             </button>
@@ -551,10 +553,10 @@ const ChatPage = () => {
                             </SelectContent>
                         </Select>
 
-
-                        <input
-                            type="text"
-                            className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all duration-150"
+                        <textarea
+                            rows={1}
+                            maxLength={12000}
+                            className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem]  max-h-[400px] scroll-smooth overflow-auto duration-150"
                             placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
