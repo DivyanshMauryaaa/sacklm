@@ -14,7 +14,6 @@ interface DocumentEditorProps {
 const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
   const titleInstance = title;
   const contentInstance = content;
-  const idInstance = id;
 
   const [editorTitle, setTitle] = useState(titleInstance);
   const [editorContent, setContent] = useState(contentInstance);
@@ -233,10 +232,10 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
         <button onClick={() => handleFormat('list')} className="p-2 hover:bg-gray-200 rounded">•</button>
         
         <div className="flex-grow"></div>
-        <button onClick={() => setPreview(!preview)} className="p-2 hover:bg-gray-200 rounded">
+        <button onClick={() => setPreview(!preview)} className="p-2 hover:bg-gray-200 px-4 scale-75 rounded">
           {preview ? 'Edit' : 'Preview'}
         </button>
-        <button disabled={Saveloader} onClick={saveDocument} className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <button disabled={Saveloader} onClick={saveDocument} className="p-2 px-4 cursor-pointer border border-gray-300 transition-all duration-200 hover:text-white rounded hover:bg-black">
           Save
         </button>
       </div>
@@ -251,7 +250,7 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
             ref={textareaRef}
             value={editorContent}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-[60vh] p-4 font-mono resize-none focus:outline-none"
+            className="w-full h-[60vh] p-4 font-mono resize-none focus:outline-none border-t "
             placeholder="Start writing in Markdown..."
           />
         )}
