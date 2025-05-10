@@ -63,7 +63,7 @@ export default function Home() {
         <p className="text-[70px] font-[600] text-gray-700">
           {
           time < "12:00PM" ? 
-            ("Good Morning") : time < "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("🌙 Night time") : "☀️Good Afternoon"} <span className="
+            ("Good Morning") : time < "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("Nice to see you...") : "☀️Good Afternoon"} <span className="
           bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 font-bold
         ">{user?.firstName || "Loading..."}</span></p>
         <p className="text-[30px] font-bold text-gray-700 flex gap-1"><Clock size={32} /> {time}</p>
@@ -144,7 +144,7 @@ export default function Home() {
       <br />
 
       <div>
-        <p className="font-bold text-2xl">Recents</p>
+        {recents.length === "0" ? recentChats.length === "0" ? "" : <p className="font-bold text-2xl">Recents</p> : ""}
         <br />
 
         <div className="flex gap-3 flex-wrap">
