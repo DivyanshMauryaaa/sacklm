@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, Clock, FileIcon, Folder, MessageCircleMore, Paperclip, WandIcon } from "lucide-react";
+import { Box, Clock, FileIcon, Folder, ImagesIcon, LucideInspectionPanel, MessageCircleMore, Paperclip, WandIcon } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -56,14 +56,14 @@ export default function Home() {
         <Image
           width={60}
           height={60}
-          src={user?.imageUrl || "https://via.placeholder.com/300"}
+          src={user?.imageUrl || "https://picsum.photos/"}
           alt={user?.id || "Profile Pic not available"}
           className="rounded-full cursor-pointer"
         />
         <p className="text-[70px] font-[600] text-gray-700">
           {
-          time < "12:00PM" ? 
-            ("Good Morning") : time < "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("Nice to see you...") : "☀️Good Afternoon"} <span className="
+            time < "12:00PM" ?
+              ("Good Morning") : time > "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("Good Afternoon") : "Welcome back "} <span className="
           bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 font-bold
         ">{user?.firstName || "Loading..."}</span></p>
         <p className="text-[30px] font-bold text-gray-700 flex gap-1"><Clock size={32} /> {time}</p>
@@ -104,15 +104,26 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href={"/quick-tools"}>
+          <Link href={"/image"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <WandIcon size={32} className="mt-3" />
+              <ImagesIcon size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
 
-              <p className="font-bold text-2xl mb-3">Quick Tools</p>
+              <p className="font-bold text-2xl mb-3">Image</p>
             </div>
           </Link>
+
+          <Link href={"/workflows"}>
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+              <LucideInspectionPanel size={32} className="mt-3" />
+
+              <div className="h-[70px]"></div>
+
+              <p className="font-bold text-2xl mb-3">Workflows</p>
+            </div>
+          </Link>
+
 
           {/* <Link href={"/organize"}>
 
@@ -152,7 +163,7 @@ export default function Home() {
           {recents.map((data: any) => (
             <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
               <FileIcon size={24} />
-              <Link href={'/documents'}><p className="font-bold text-2xl mt-2 hover:text-gray-500">{data.title}</p></Link>
+              <Link href={'/documents'}><p className="hover:underline font-bold text-2xl mt-2 ">{data.title}</p></Link>
             </div>
           ))}
 
@@ -164,7 +175,7 @@ export default function Home() {
           {recentChats.map((data: any) => (
             <div key={data.id} className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] ">
               <MessageCircleMore size={24} />
-              <Link href={'/chats'}><p className="font-bold text-2xl mt-2 hover:text-gray-500">{data.title}</p></Link>
+              <Link href={'/chats'}><p className="font-bold text-2xl hover:underline mt-2 ">{data.title}</p></Link>
             </div>
           ))}
         </div>

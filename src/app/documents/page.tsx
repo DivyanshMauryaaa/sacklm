@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { toast, ToastContainer } from 'react-toast';
 import Image from 'next/image';
 import { PencilLine, Trash2 } from 'lucide-react';
-import DocumentEditor from './[id]/page';
+import DocumentEditor from './(editor)/page';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import Markdown from 'react-markdown';

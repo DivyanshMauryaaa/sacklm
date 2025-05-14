@@ -19,6 +19,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 
 
 const ChatPage = () => {
@@ -345,6 +347,26 @@ const ChatPage = () => {
         }
     };
 
+    const [contextMenuOpen, setContextMenuOpen] = useState(false);
+    const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setContextMenuPos({ x: e.clientX, y: e.clientY });
+        setContextMenuOpen(true);
+    };
+
+    const handleMenuAction = (action: string, e: React.MouseEvent, chat: any) => {
+        e.stopPropagation();
+
+        setContextMenuOpen(false);
+        if (action === "delete") {
+            deleteChat(chat.id, e);
+        } else if (action === "rename") {
+            // Add your rename logic
+        }
+    };
+
 
     const saveDocument = async (title: string, content: string) => {
         const { error } = await supabase.from('documents').insert([
@@ -371,9 +393,9 @@ const ChatPage = () => {
     }
 
     return (
-        <SidebarProvider className="w-full h-screen flex overflow-hidden">
+        <SidebarProvider className="w-full flex overflow-scroll">
             <ToastContainer position="bottom-right" delay={1000}></ToastContainer>
-            <ChatSidebar className="h-screen">
+            <ChatSidebar className="h-[99vh]">
                 <SidebarHeader>
                     <div className="p-3 flex justify-between items-center">
                         <p className="font-bold text-2xl">Chats</p>
@@ -397,22 +419,28 @@ const ChatPage = () => {
                             No saved chats yet
                         </div>
                     ) : (
-                        chatHistory.map((chat) => (
-                            <div
-                                key={chat.id}
-                                className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group ${activeChatId === chat.id ? 'bg-black text-white' : ''
-                                    }`}
-                                onClick={() => loadChat(chat.id)}
-                            >
-                                <p className="truncate text-sm">{chat.title}</p>
-                                <button
-                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded-full"
-                                    onClick={(e) => deleteChat(chat.id, e)}
+
+                        chatHistory.map((chat: any) => {
+                            return (
+                                <div
+                                    key={chat.id}
+                                    onClick={() => loadChat(chat.id)}
+                                    onContextMenu={handleContextMenu}
+                                    className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''
+                                        }`}
                                 >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
-                        ))
+                                    <p className="truncate text-sm">{chat.title}</p>
+                                    <button
+                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded-full z-10"
+                                        onClick={(e) => deleteChat(chat.id, e)}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            );
+                        })
+
+
                     )}
                 </SidebarContent>
             </ChatSidebar>
@@ -437,26 +465,26 @@ const ChatPage = () => {
                                     <br />
                                     <div className="flex gap-3">
 
-                                        <div 
+                                        <div
                                             onClick={() => setPrompt("Help me solve a python problem:  ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
-                                            
+
                                             <Code size={32} />
                                             <br />
                                             <p className="text-black font-[600] mt-2">Help me solve a coding problem.</p>
                                         </div>
 
                                         <div
-                                            onClick={() => setPrompt("Help me write a sick leave letter to my boss. Keep the tone formal ")} 
+                                            onClick={() => setPrompt("Help me write a sick leave letter to my boss. Keep the tone formal ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
-                                            
+
                                             <Pencil size={32} />
                                             <br />
                                             <p className="text-black font-[600] mt-2">Help me write a document.</p>
                                         </div>
 
                                         <div
-                                            onClick={() => setPrompt("Help me plan a trip to ")} 
+                                            onClick={() => setPrompt("Help me plan a trip to ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
                                             <Plane size={32} />
                                             <br />
@@ -535,7 +563,7 @@ const ChatPage = () => {
                                 onClick={saveCurrentChat}
                                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all flex-shrink-0"
                                 title="Save conversation"
-                                
+
                             >
                                 <Save size={18} />
                             </button>
@@ -580,6 +608,8 @@ const ChatPage = () => {
                         </button>
                     </div>
                 </div>
+
+                
             </main>
 
             <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>

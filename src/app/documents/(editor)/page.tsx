@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Markdown from 'react-markdown';
 import { useUser } from '@clerk/nextjs';
+import { Eye, Save, SaveIcon } from 'lucide-react';
 
 interface DocumentEditorProps {
   id: string;
@@ -232,11 +233,11 @@ const DocumentEditor = ({ id, title, content }: DocumentEditorProps) => {
         <button onClick={() => handleFormat('list')} className="p-2 hover:bg-gray-200 rounded">•</button>
         
         <div className="flex-grow"></div>
-        <button onClick={() => setPreview(!preview)} className="p-2 hover:bg-gray-200 px-4 scale-75 rounded">
-          {preview ? 'Edit' : 'Preview'}
+        <button onClick={() => setPreview(!preview)} className="p-2 hover:bg-gray-200 px-4 scale-75 rounded flex gap-2">
+          {preview ? 'Edit' : 'View'}
         </button>
-        <button disabled={Saveloader} onClick={saveDocument} className="p-2 px-4 cursor-pointer border border-gray-300 transition-all duration-200 hover:text-white rounded hover:bg-black">
-          Save
+        <button disabled={Saveloader} onClick={saveDocument} className="p-2 flex gap-3 px-4 cursor-pointer border border-gray-300 transition-all duration-200 hover:text-white rounded hover:bg-black">
+          <Save size={20} className='mt-1 ml-1'/>Save
         </button>
       </div>
 

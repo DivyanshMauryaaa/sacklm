@@ -63,8 +63,11 @@ export default function RootLayout({
                   <Link href="/models">
                     <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Models</p>
                   </Link>
-                  <Link href="/quick-tools">
-                    <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Quick Tools</p>
+                  <Link href="/image">
+                    <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Images</p>
+                  </Link>
+                  <Link href="/workflows">
+                    <p className="text-gray-400 font-bold hover:text-black transition-all duration-200 cursor-pointer text-lg">Workflows</p>
                   </Link>
 
                   <UserButton userProfileUrl="/user-profile" userProfileMode="navigation" />
