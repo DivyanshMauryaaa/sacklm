@@ -18,10 +18,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-
 
 const ChatPage = () => {
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -36,6 +32,7 @@ const ChatPage = () => {
     const [documentToSave, setDocumentToSave] = useState<{ title: string, content: string } | null>(null);
     const [modelInstruction, setModelInstruction] = useState('');
     const [userModels, setUserModels] = useState<any>([]);
+    const [model, setModel] = useState('gemini-2.0-flash');
 
     const fetchModels = async () => {
         const { data, error } = await supabase.from('models').select('*').eq('user_id', user?.id);
@@ -249,53 +246,57 @@ const ChatPage = () => {
         try {
             // Create a context from previous messages (last few exchanges)
             const conversationContext = chatMessages
-                .slice(-5) // Take last 6 messages (for context)
+                .slice(-5)
                 .map(msg => msg.content)
                 .join("\n\n");
 
             const promptWithContext = conversationContext
-                ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}\n`
+                ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}`
                 : userPrompt;
 
-            // Add instructions parameter for custom models (new feature)
-            const instructions = modelInstruction || "";  // Ensure this is passed to the API correctly.
+            const instructions = modelInstruction || "";
 
-            // Build the request URL, using the response format you provided
-            const url = new URL(`http://127.0.0.1:5000/generate?model=google&prompt=${prompt}&instructions=${instructions}&context=${conversationContext}`);
-            url.searchParams.append("prompt", encodeURIComponent(promptWithContext));
-            url.searchParams.append("instructions", encodeURIComponent(instructions));
+            // Call your Next.js API route
+            const res = await fetch("/api/generate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    prompt: promptWithContext,
+                    chatContext: chatMessages, // full chat context (could be sliced if too long)
+                    context: conversationContext,
+                    file: null,
+                    instructions
+                }),
+            });
 
+            const data = await res.json();
 
-            // Fetch response from Flask API
-            const response = await fetch(url);
+            let content = "No response received.";
 
-            if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+            if (model === "gpt-4") {
+                content = data?.response?.choices?.[0]?.message?.content || content;
+            } else if (model === "gemini-2.0-flash") {
+                content = data?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
             }
+            
 
-            const data = await response.json();
-
-            // Extracting the response from the API's candidates (ensure it's correctly parsed)
-            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from the AI";
-
-            // Update messages with the AI's response
             const finalMessages = [
                 ...updatedMessages,
-                { role: "model", content: content }
+                { role: "model", content }
             ];
 
             setChatMessages(finalMessages);
 
-            // Auto-save chat after response (just as in your existing code)
+            // Auto-save chat to Supabase
             if (user) {
                 setTimeout(async () => {
                     if (activeChatId) {
-                        // Update existing chat
                         const { error } = await supabase
                             .from('chats')
-                            .update({
-                                content: { messages: finalMessages }
-                            })
+                            .update({ content: { messages: finalMessages } })
                             .eq('id', activeChatId)
                             .eq('user_id', user.id);
 
@@ -309,7 +310,6 @@ const ChatPage = () => {
                             ));
                         }
                     } else {
-                        // Save as new chat
                         const title = userPrompt.length > 20
                             ? userPrompt.slice(0, 20) + "..."
                             : userPrompt;
@@ -328,7 +328,10 @@ const ChatPage = () => {
                             console.error('Auto-save insert error:', error);
                         } else if (data) {
                             const newChatId = data.id;
-                            setChatHistory(prev => [{ id: newChatId, title, messages: finalMessages }, ...prev]);
+                            setChatHistory(prev => [
+                                { id: newChatId, title, messages: finalMessages },
+                                ...prev
+                            ]);
                             setActiveChatId(newChatId);
                         }
                     }
@@ -346,27 +349,6 @@ const ChatPage = () => {
             setPrompt("");
         }
     };
-
-    const [contextMenuOpen, setContextMenuOpen] = useState(false);
-    const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
-
-    const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault();
-        setContextMenuPos({ x: e.clientX, y: e.clientY });
-        setContextMenuOpen(true);
-    };
-
-    const handleMenuAction = (action: string, e: React.MouseEvent, chat: any) => {
-        e.stopPropagation();
-
-        setContextMenuOpen(false);
-        if (action === "delete") {
-            deleteChat(chat.id, e);
-        } else if (action === "rename") {
-            // Add your rename logic
-        }
-    };
-
 
     const saveDocument = async (title: string, content: string) => {
         const { error } = await supabase.from('documents').insert([
@@ -425,7 +407,6 @@ const ChatPage = () => {
                                 <div
                                     key={chat.id}
                                     onClick={() => loadChat(chat.id)}
-                                    onContextMenu={handleContextMenu}
                                     className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''
                                         }`}
                                 >
@@ -556,8 +537,8 @@ const ChatPage = () => {
                     </div>
                 </div>
 
-                <div className="p-1 bg-transparent fixed bottom-10 left-0 right-0">
-                    <div className="max-w-3xl mx-auto flex gap-2 items-center">
+                <div className="p-0 bg-transparent fixed bottom-10 left-0 right-0">
+                    <div className="max-w-3xl mx-auto gap-2 items-center">
                         {chatMessages.length > 0 && activeChatId === null && user && (
                             <button
                                 onClick={saveCurrentChat}
@@ -569,47 +550,65 @@ const ChatPage = () => {
                             </button>
                         )}
 
-                        <Select onValueChange={(value) => setModelInstruction(value)} defaultValue=" ">
-                            <SelectTrigger className="w-[130px] flex">
-                                <Box /><SelectValue placeholder="Model" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value=" " key={'default'}>Default</SelectItem>
-                                {userModels.map((model: any) => (
-                                    <SelectItem key={model.id} value={model.instructions}>{model.title}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                            <textarea
+                                rows={1}
+                                maxLength={12000}
+                                className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem]  max-h-[400px] scroll-smooth overflow-auto duration-150"
+                                placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey && user) {
+                                        e.preventDefault();
+                                        handleSubmitPrompt(prompt);
+                                    }
+                                }}
+                                disabled={loadingResponse || !user}
+                                autoFocus
+                            />
 
-                        <textarea
-                            rows={1}
-                            maxLength={12000}
-                            className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem]  max-h-[400px] scroll-smooth overflow-auto duration-150"
-                            placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey && user) {
-                                    e.preventDefault();
-                                    handleSubmitPrompt(prompt);
-                                }
-                            }}
-                            disabled={loadingResponse || !user}
-                            autoFocus
-                        />
+                            <button
+                                className={`bg-black text-white rounded-lg p-3 px-5 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user) ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                onClick={() => handleSubmitPrompt(prompt)}
+                                disabled={!prompt.trim() || loadingResponse || !user}
+                            >
+                                <SendHorizonal size={18} />
+                            </button>
 
-                        <button
-                            className={`bg-black text-white rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            onClick={() => handleSubmitPrompt(prompt)}
-                            disabled={!prompt.trim() || loadingResponse || !user}
-                        >
-                            <SendHorizonal size={18} />
-                        </button>
+                        </div>
+
+                        <br />
+
+                        <div className="gap-2 flex">
+                            <Select onValueChange={(value) => setModelInstruction(value)} defaultValue=" ">
+                                <SelectTrigger className="w-[130px] flex">
+                                    <Box /><SelectValue placeholder="Model" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value=" " key={'default'}>Default</SelectItem>
+                                    {userModels.map((model: any) => (
+                                        <SelectItem key={model.id} value={model.instructions}>{model.title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select onValueChange={(value) => setModel(value)} defaultValue="gemini-2.0-flash">
+                                <SelectTrigger className="w-[130px] flex">
+                                    <Sparkles /><SelectValue placeholder="Model" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+
                     </div>
                 </div>
 
-                
+
             </main>
 
             <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
