@@ -16,9 +16,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from '@/components/ui/textarea';
-import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlusIcon, Sparkles, Trash2Icon } from 'lucide-react';
+import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlayIcon, PlusIcon, Sparkles, Trash2Icon } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Markdown from 'react-markdown';
 
 const Page = () => {
     const params = useParams();
@@ -43,15 +44,41 @@ const Page = () => {
     const [editModel, setEditModel] = useState('gemini-2.0-flash');
     const [editContext, setEditContext] = useState('response');
     const [editLoading, setEditLoading] = useState(false);
+    const [prompt, setPrompt] = useState('');
+
+    const [agentResponses, setAgentResponses] = useState<any>([]);
+    const [runLoading, setRunLoading] = useState(false)
 
     const { user } = useUser();
 
+    const deleteResponse = async (id: string) => {
+        const { error } = await supabase
+            .from('responses')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error("Error deleting response:", error.message);
+        } else {
+            console.log("Response successfully deleted");
+            fetchResponses(); // Refresh the responses list
+        }
+    };
+
+    const fetchResponses = async () => {
+        const { data: responses, error } = await supabase.from('responses').select("*").eq('workflow_id', workflowId);
+        setAgentResponses(responses);
+    }
+
+    useEffect(() => {
+        fetchResponses();
+    });
+
     const runWorkflow = async (prompt: string) => {
+        setRunLoading(true)
 
-        const [initialResponse, setInitialResponse] = useState('');
-        const [response, setResponse] = useState('');
-
-        const getRes = await fetch('/api/generate', {
+        // Get the AI response from the API
+        const get_initial_response = await fetch('/api/generate', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -59,30 +86,107 @@ const Page = () => {
             body: JSON.stringify({
                 model: agents[0].model,
                 prompt: prompt,
-                chatContext: [], // Initialize empty chat context
-                context: '', // Default context
+                chatContext: [],
+                context: '',
                 file: null,
                 instructions: agents[0].instructions
             }),
         });
 
-        const initial_res = await getRes.json();
+        // Parse the initial response
+        const initial_json = await get_initial_response.json();
         let content = "No response received.";
 
         if (agents[0].model === "gpt-4") {
-            content = initial_res?.response?.choices?.[0]?.message?.content || content;
+            content = initial_json?.response?.choices?.[0]?.message?.content || content;
         } else if (agents[0].model === "gemini-2.0-flash") {
-            content = initial_res?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
         }
 
-        setInitialResponse(content);
+        const initial_response = content;
+        console.log(content)
 
-        for (let i = 1; i < agents.length - 1; ++i) {
+        // Insert the initial response
+        await supabase.from('responses').insert({
+            user_id: user?.id,
+            content: content,
+            workflow_id: workflowId,
+            agent_id: agents[0].id,
+            index: 1
+        });
 
-            
+        fetchResponses();
 
+        // Run the rest of the agents
+        for (let i = 1; i < agents.length; ++i) {
+            console.log("Current Index: ", i);
+
+            let context: string | null = null;
+
+            if (!agents[i]?.model || !agents[i]?.instructions) {
+                console.warn(`Agent ${i} is missing required properties`);
+                continue;
+            }
+
+            if (agents[i].context === "response") {
+                const req_index = i - 1;
+                const { data: contextData, error } = await supabase
+                    .from('responses')
+                    .select("*")
+                    .eq('index', req_index)
+                    .eq('workflow_id', workflowId)
+                    .single();
+
+                if (error) {
+                    console.error("Error fetching context:", error);
+                    continue;
+                }
+
+                context = contextData[0].content || null;
+            } else if (agents[i].context === "prompt") {
+                context = prompt;
+            } else if (agents[i].context === "initial response") {
+                context = initial_response;
+            }
+
+            const response = await fetch('/api/generate', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: agents[i].model,
+                    prompt: prompt,
+                    chatContext: [],
+                    context: context,
+                    file: null,
+                    instructions: agents[i].instructions
+                }),
+            });
+
+            const responseJson = await response.json();
+            let newContent = "No response.";
+
+            if (agents[i].model === "gpt-4") {
+                newContent = responseJson?.response?.choices?.[0]?.message?.content || newContent;
+            } else if (agents[i].model === "gemini-2.0-flash") {
+                newContent = responseJson?.response?.candidates?.[0]?.content?.parts?.[0]?.text || newContent;
+            }
+
+            console.log(newContent)
+
+            await supabase.from('responses').insert({
+                user_id: user?.id,
+                workflow_id: workflowId,
+                agent_id: agents[i].id,
+                content: newContent,
+                index: i
+            });
+
+            fetchResponses();
         }
 
+        setRunLoading(false)
     }
 
     const addAgent = async () => {
@@ -222,16 +326,14 @@ const Page = () => {
                             index={agents.length + 1}
                         />
 
-                        <Button className='flex cursor-pointer gap-3'>
-                            <Play />
+                        <Button className='flex cursor-pointer gap-3 disabled:bg-gray-700 disabled:text-white' disabled={runLoading} onClick={() => runWorkflow(prompt)}>
+                            <PlayIcon />
                             Run
                         </Button>
                     </div>
 
                     <br /><br />
                     <div className='flex gap-4'>
-
-
                         {agents.map((agent: any) => (
                             <div className='border border-gray-300 rounded-xl p-4 w-[250px] h-[150px]' key={agent.id}>
                                 <div className='flex gap-2'>
@@ -254,16 +356,8 @@ const Page = () => {
                                 <p className='text-sm text-gray-400'>
                                     {agent.description}
                                 </p>
-
-                                <div className='flex gap-2'>
-
-                                </div>
-
-
-
                             </div>
                         ))}
-
                     </div>
 
                     <EditDialog
@@ -284,6 +378,34 @@ const Page = () => {
                         index={editingAgent?.index}
                     />
 
+                    <br /><br />
+
+                    <p className='text-center font-bold text-3xl'>Previous Responses</p>
+                    <div className='flex gap-3'>
+                        {agentResponses.map((res: any) => (
+                            <div key={res.id} className='w-[600px] p-4 border cursor-pointer border-gray-300 h-[400px] overflow-scroll relative'>
+                                <div className='absolute top-2 right-2'>
+                                    <Trash2Icon
+                                        color='red'
+                                        size={16}
+                                        className='cursor-pointer hover:scale-110 transition-transform'
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteResponse(res.id);
+                                        }}
+                                    />
+                                </div>
+                                <Markdown>{res.content}</Markdown>
+                            </div>
+                        ))}
+                    </div>
+
+                    <Textarea
+                        placeholder="Enter your prompt here..."
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        className="w-full min-h-[100px] mt-4"
+                    />
                 </div>
             ) : (
                 <p>Loading workflow...</p>
