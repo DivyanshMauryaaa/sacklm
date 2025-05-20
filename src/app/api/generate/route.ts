@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
                         role: 'user',
                         parts: [
                             {
-                                text: "User prompt: " + mainPrompt.prompt + " Some system instructions: You are SackLM AI. " + mainPrompt.instructions
+                                text: "User prompt: " + mainPrompt.prompt + " Some system instructions: You are SackLM AI. " + mainPrompt.instructions + " Context: " + mainPrompt.context
                             }
                         ]
                     }],

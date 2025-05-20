@@ -79,15 +79,9 @@ const Page = () => {
     const runWorkflow = async (prompt: string) => {
         setRunLoading(true)
 
+        // Clear existing responses for this workflow
         await supabase.from('responses').delete().eq('workflow_id', workflowId);
         fetchResponses();
-
-        const { data } = await supabase.from('run_sessions').insert({
-            user_id: user?.id,
-            workflow_id: workflowId,
-        });
-
-        console.log("Session: ", data)
 
         // Ensure agents are sorted by index before running
         const sortedAgents = [...agents].sort((a, b) => a.index - b.index);
@@ -102,7 +96,7 @@ const Page = () => {
                 model: sortedAgents[0].model,
                 prompt: prompt,
                 chatContext: [],
-                context: '', // Initial agent has no previous context
+                context: ' (this is the initial prompt, if it"s empty, so.... just do what the instructions say, no context unless you get one for this one)', // Initial agent has no previous context
                 file: null,
                 instructions: sortedAgents[0].instructions
             }),
@@ -119,95 +113,92 @@ const Page = () => {
         }
 
         const initial_response_content = content; // Store content for 'initial response' context type
-        console.log(content)
+        console.log("Initial response:", content)
 
         // Insert the initial response with the correct agent ID and index
-        await supabase.from('responses').insert({
+        const { data: initialResponseData, error: initialResponseError } = await supabase.from('responses').insert({
             user_id: user?.id,
             content: content,
             workflow_id: workflowId,
             agent_id: sortedAgents[0].id, // Use the agent's ID
             index: sortedAgents[0].index // Use the agent's index
-        });
+        }).select();
+
+        if (initialResponseError) {
+            console.error("Error inserting initial response:", initialResponseError);
+            setRunLoading(false);
+            return;
+        }
 
         fetchResponses(); // Fetch responses to show the first one
 
         // Run the rest of the agents
-        for (let i = 1; i < sortedAgents.length; ++i) {
-            console.log("Current Agent Index in Array: ", i);
-            console.log("Current Agent Workflow Index: ", sortedAgents[i].index);
+        let agent_index = 1;
 
-            let context_content: string | null = null;
+        for (agent_index = 1; agent_index < sortedAgents.length; ++agent_index) {
+            let current_agent = sortedAgents[agent_index];
+            console.log("Current agent at: ", current_agent + " " + current_agent.index);
 
-            if (!sortedAgents[i]?.model || !sortedAgents[i]?.instructions) {
-                console.warn(`Agent ${i} is missing required properties`);
+            // Get all responses up to this point, sorted by index
+            const { data: responses, error: responsesError } = await supabase
+                .from('responses')
+                .select('*')
+                .eq('workflow_id', workflowId)
+                .order('index', { ascending: true });
+
+            if (responsesError) {
+                console.error("Error fetching responses:", responsesError);
                 continue;
             }
 
-            if (sortedAgents[i].context === "response") {
-                // Fetch the response from the previous agent using its agent_id
-                 const { data: contextData, error } = await supabase
-                    .from('responses')
-                    .select("content") // Only fetch the content
-                    .eq('agent_id', sortedAgents[i - 1].id) // Use the previous agent's ID
-                    .eq('workflow_id', workflowId)
-                    .single();
+            // Determine the context based on the agent's context setting
+            let context_content = '';
+            // Get the most recent response
+            const lastResponse = responses[responses.length - 1];
+            context_content = lastResponse.content || '';
+            console.log("context: ", context_content)
 
 
-                if (error) {
-                    console.error("Error fetching context for agent", sortedAgents[i].index, ":", error);
-                    // Depending on requirements, you might want to stop or use null context
-                     context_content = null;
-                } else {
-                    context_content = contextData?.content || null;
-                }
-
-            } else if (sortedAgents[i].context === "prompt") {
-                context_content = prompt;
-            } else if (sortedAgents[i].context === "initial response") {
-                context_content = initial_response_content;
-            }
-
-            // Ensure there is context content to send to the API, or handle null context if appropriate
-             if (context_content === null) {
-                 console.warn(`No context available for agent ${sortedAgents[i].index} with context type ${sortedAgents[i].context}. Proceeding without context.`);
-                 // If context is critical, you might want to break or return here.
-             }
-
-
-            const response = await fetch('/api/generate', {
+            // Get the AI response for the current agent
+            const get_response = await fetch('/api/generate', {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: sortedAgents[i].model,
-                    prompt: prompt, // Still include the original prompt
-                    chatContext: [], // Assuming chatContext is not used for subsequent agents in this workflow
-                    context: context_content, // Pass the fetched or determined context
+                    model: current_agent.model,
+                    prompt: prompt,
+                    chatContext: [],
+                    context: context_content,
                     file: null,
-                    instructions: sortedAgents[i].instructions
+                    instructions: current_agent.instructions
                 }),
             });
 
-            const responseJson = await response.json();
-            let newContent = "No response.";
+            // Parse the response
+            const response_json = await get_response.json();
+            let response_content = "No response received.";
 
-             if (sortedAgents[i].model.includes("gpt")) { // Check for gpt models
-                newContent = responseJson?.response?.choices?.[0]?.message?.content || newContent;
-            } else if (sortedAgents[i].model.includes("gemini")) { // Check for gemini models
-                newContent = responseJson?.response?.candidates?.[0]?.content?.parts?.[0]?.text || newContent;
+            if (current_agent.model.includes("gpt")) {
+                response_content = response_json?.response?.choices?.[0]?.message?.content || response_content;
+            } else if (current_agent.model.includes("gemini")) {
+                response_content = response_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || response_content;
             }
 
-
-            await supabase.from('responses').insert({
+            // Insert the response
+            const { error: responseError } = await supabase.from('responses').insert({
                 user_id: user?.id,
+                content: response_content,
                 workflow_id: workflowId,
-                agent_id: sortedAgents[i].id, // Use the current agent's ID
-                content: newContent,
-                index: sortedAgents[i].index // Use the current agent's index
+                agent_id: current_agent.id,
+                index: current_agent.index
             });
 
+            if (responseError) {
+                console.error("Error inserting response:", responseError);
+            }
+
+            // Fetch updated responses
             fetchResponses();
         }
 
@@ -354,7 +345,7 @@ const Page = () => {
 
                         <Button className='flex cursor-pointer gap-3 disabled:bg-gray-700 disabled:text-white' disabled={runLoading} onClick={() => runWorkflow(prompt)}>
                             <PlayIcon />
-                            Run
+                            {runLoading ? "Running..." : "Run"}
                         </Button>
                     </div>
 
@@ -413,10 +404,14 @@ const Page = () => {
                         className="w-full min-h-[100px] mt-4"
                     />
 
+                    <br />
+
                     <p className='text-center font-bold text-3xl'>Previous Responses</p>
+
+                    <br />
                     <div className='flex gap-3'>
                         {agentResponses.map((res: any) => (
-                            <div key={res.id} className='w-[600px] p-4 border cursor-pointer border-gray-300 h-[400px] overflow-scroll relative'>
+                            <div key={res.id} className='w-[600px] p-5 rounded-xl border cursor-pointer border-gray-300 h-[400px] overflow-scroll relative'>
                                 <div className='absolute top-2 right-2'>
                                     <Trash2Icon
                                         color='red'
@@ -432,6 +427,8 @@ const Page = () => {
                             </div>
                         ))}
                     </div>
+
+                    
                 </div>
             ) : (
                 <p>Loading workflow...</p>
