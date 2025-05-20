@@ -95,7 +95,7 @@ const Page = () => {
             },
             body: JSON.stringify({
                 model: sortedAgents[0].model,
-                prompt: prompt,
+                prompt: prompt || " ",
                 chatContext: [],
                 context: ' (this is the initial prompt, if it"s empty, so.... just do what the instructions say, no context unless you get one for this one)', // Initial agent has no previous context
                 file: null,
@@ -174,7 +174,7 @@ const Page = () => {
                 },
                 body: JSON.stringify({
                     model: current_agent.model,
-                    prompt: prompt,
+                    prompt: prompt || " ",
                     chatContext: [],
                     context: context_content,
                     file: null,

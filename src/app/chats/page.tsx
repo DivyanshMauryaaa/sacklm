@@ -17,7 +17,8 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { models } from "../globals";
 
 const ChatPage = () => {
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -280,6 +281,10 @@ const ChatPage = () => {
                 content = data?.response?.choices?.[0]?.message?.content || content;
             } else if (model === "gemini-2.0-flash") {
                 content = data?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            } else if (model === "mistral-7b") {
+                content = data?.response;
+            } else if (model === "llama-4-scout") {
+                content = data?.response;
             }
             
 
@@ -600,6 +605,8 @@ const ChatPage = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
+                                    <SelectItem value="mistral-7b" key={"mistral-7b"}>Mistral 7B</SelectItem>
+                                    <SelectItem value="llama-4-scout" key={"llama-4-scout"}>LLaMA 4 Scout</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
