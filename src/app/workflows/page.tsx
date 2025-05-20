@@ -88,9 +88,37 @@ const page = () => {
 
                     <Link href={`/workflows/${workflow.id}`} key={workflow.id}>
                         <div className='border border-gray-300 p-4 rounded-xl min-w-[400px] cursor-pointer min-h-[100px] w-[400px] h-[150px] hover:bg-gray-100 transition-all duration-150'>
-                            <p className='font-[600] text-3xl text-black'>{workflow.title}</p>
+                            <div 
+                                contentEditable 
+                                className='font-[600] text-3xl text-black outline-none'
+                                onClick={(e) => e.preventDefault()}
+                                onBlur={async (e) => {
+                                    const newTitle = e.currentTarget.textContent || '';
+                                    await supabase
+                                        .from('workflows')
+                                        .update({ title: newTitle })
+                                        .eq('id', workflow.id);
+                                }}
+                                suppressContentEditableWarning={true}
+                            >
+                                {workflow.title}
+                            </div>
 
-                            <p className='text-gray-400'>{workflow.description ? workflow.description : <p className='italic text-slate-300'>No Description available</p>}</p>
+                            <div 
+                                contentEditable 
+                                className='text-gray-400 outline-none'
+                                onClick={(e) => e.preventDefault()}
+                                onBlur={async (e) => {
+                                    const newDescription = e.currentTarget.textContent || '';
+                                    await supabase
+                                        .from('workflows')
+                                        .update({ description: newDescription })
+                                        .eq('id', workflow.id);
+                                }}
+                                suppressContentEditableWarning={true}
+                            >
+                                {workflow.description || <span className='italic text-slate-300'>No Description available</span>}
+                            </div>
                         </div>
                     </Link>
 

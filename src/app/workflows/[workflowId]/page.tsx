@@ -16,10 +16,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from '@/components/ui/textarea';
-import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlayIcon, PlusIcon, Sparkles, Trash2Icon } from 'lucide-react';
+import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlayIcon, PlusIcon, SaveIcon, Sparkles, Trash2Icon } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Markdown from 'react-markdown';
+import { toast, ToastContainer } from 'react-toast';
 
 const Page = () => {
     const params = useParams();
@@ -155,8 +156,14 @@ const Page = () => {
             let context_content = '';
             // Get the most recent response
             const lastResponse = responses[responses.length - 1];
-            context_content = lastResponse.content || '';
-            console.log("context: ", context_content)
+        
+            if (current_agent.context === "response") {
+                context_content = lastResponse.content || '';
+            } else if (current_agent.context === "prompt") {
+                context_content = prompt;
+            } else if (current_agent.context === "initial response") {
+                context_content = initial_response_content;
+            }
 
 
             // Get the AI response for the current agent
@@ -319,6 +326,7 @@ const Page = () => {
 
     return (
         <div className='p-5'>
+            <ToastContainer></ToastContainer>
             {currentWorkflow ? (
                 <div>
                     <p className='text-5xl font-bold text-gray-700'>{currentWorkflow.title}</p>
@@ -350,7 +358,7 @@ const Page = () => {
                     </div>
 
                     <br /><br />
-                    <div className='flex gap-4'>
+                    <div className='flex gap-4 flex-wrap'>
                         {agents.map((agent: any) => (
                             <div className='border border-gray-300 rounded-xl p-4 w-[250px] h-[150px]' key={agent.id}>
                                 <div className='flex gap-2'>
@@ -406,23 +414,40 @@ const Page = () => {
 
                     <br />
 
-                    <p className='text-center font-bold text-3xl'>Previous Responses</p>
+                    <p className='text-center font-bold text-3xl'>Response will appear here...</p>
 
                     <br />
-                    <div className='flex gap-3'>
+                    <div className='flex gap-3 flex-wrap'>
                         {agentResponses.map((res: any) => (
                             <div key={res.id} className='w-[600px] p-5 rounded-xl border cursor-pointer border-gray-300 h-[400px] overflow-scroll relative'>
-                                <div className='absolute top-2 right-2'>
+                                <div className='border-b border-gray-300 flex gap-2 p-4'>
                                     <Trash2Icon
                                         color='red'
-                                        size={16}
+                                        size={20}
                                         className='cursor-pointer hover:scale-110 transition-transform'
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             deleteResponse(res.id);
                                         }}
                                     />
+                                    <SaveIcon 
+                                        color='blue'
+                                        size={20}
+                                        className='cursor-pointer hover:scale-110 transition-transform'
+                                        onClick={async () => {
+                                            
+                                            await supabase.from('documents').insert({
+                                                title: "Untitled",
+                                                content: res.content,
+                                                user_id: user?.id,  
+                                            })
+
+                                            toast.success('Document saved as "Untitled" ')
+                                          
+                                        }}
+                                    />
                                 </div>
+                                <br />
                                 <Markdown>{res.content}</Markdown>
                             </div>
                         ))}
