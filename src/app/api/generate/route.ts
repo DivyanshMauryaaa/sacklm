@@ -1,4 +1,6 @@
 // app/api/generate/route.ts
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
@@ -142,5 +144,67 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("API Error:", error);
         return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    }
+}
+
+const generateMedia = async (prompt: string, type: string, AudioText: string, imgSettings: any, videoSettings: any) => {
+    if (type === "image") {
+
+        //Image Generation block - Use DALL-E 3
+        const settings = imgSettings;
+
+        const width = settings.width;
+        const height = settings.height;
+        const seed = settings.seed;
+        const steps = settings.steps;
+        const user = useUser();
+
+        const response = await fetch('https://api.aimlapi.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${process.env.AIML_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'dall-e-2',
+              width: 1024,
+              height: 1024,
+              seed: 123,
+              steps: 30,
+            }),
+          });
+          
+          const result = await response.json();
+          const imageUrl = result?.data?.[0]?.url;
+          
+          if (imageUrl) {
+            // Supabase insert
+            await supabase.from('media').insert([
+              {
+                type: 'image',
+                url: imageUrl,
+                prompt: prompt,
+                created_at: new Date().toISOString(),
+                user_id: user?.user?.id
+              }
+            ]);
+            console.log("📸 Image saved to Supabase successfully!");
+          } else {
+            throw new Error("❌ No image URL returned from API.");
+          }
+          
+    }
+
+
+    else if (type === "video") {
+
+        //Video Generation block - Use Google Veo3
+
+    }
+
+    else if (type === "audio") {
+
+        //Audio Generation block - Use ElevenLabs
+
     }
 }
