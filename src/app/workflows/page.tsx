@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from '@/components/ui/textarea';
-import { LoaderCircle, PlusIcon } from 'lucide-react';
+import { LoaderCircle, PlusIcon, Trash2, Workflow } from 'lucide-react';
 import Link from 'next/link';
 
 const page = () => {
@@ -87,10 +87,17 @@ const page = () => {
                 {workflows.map((workflow: any) => (
 
                     <Link href={`/workflows/${workflow.id}`} key={workflow.id}>
-                        <div className='border border-gray-300 p-4 rounded-xl min-w-[400px] cursor-pointer min-h-[100px] w-[400px] h-[150px] hover:bg-gray-100 transition-all duration-150'>
-                            <div 
+                        <div className='border border-gray-300 p-4 rounded-xl min-w-[400px] cursor-pointer min-h-[100px] w-[400px] h-[250px] hover:ring-2 hover:ring-black transition-all duration-150'>
+                            <Trash2 onClick={async () => {
+                                await supabase.from('workflows').delete().eq('id', workflow.id)
+                            }} 
+                                className='hover:text-red-600'
+                            />
+                            <br />
+                            <Workflow size={32} className='border-t border-gray-300'/>
+                            <div
                                 contentEditable 
-                                className='font-[600] text-3xl text-black outline-none'
+                                className='font-[600] mt-1 text-3xl text-black outline-none'
                                 onClick={(e) => e.preventDefault()}
                                 onBlur={async (e) => {
                                     const newTitle = e.currentTarget.textContent || '';

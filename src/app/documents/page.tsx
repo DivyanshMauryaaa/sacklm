@@ -90,10 +90,6 @@ export default function Page() {
         <div className="p-6">
             <div className="mb-4 flex justify-between">
                 <p className='text-3xl font-bold '>Documents</p>
-
-                <Link href={'/documents/editor'}>
-                    <p className='flex gap-2 p-4 hover:bg-gray-200 cursor-pointer rounded-lg'><PencilLine /> New</p>
-                </Link>
             </div>
 
             <ToastContainer position="bottom-right" />
@@ -162,7 +158,7 @@ export default function Page() {
                     <DialogTitle className="text-2xl font-bold p-4"></DialogTitle>
                     <DialogContent className="overflow-y-auto max-h-[500px] p-4">
                         <div className="prose max-w-none">
-                            <Markdown>{DialogDocumentContent}</Markdown>
+                            <Markdown unwrapDisallowed>{DialogDocumentContent}</Markdown>
                         </div>
                     </DialogContent>
                 </Dialog>

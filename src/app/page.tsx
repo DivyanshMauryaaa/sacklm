@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Box, Clock, FileIcon, Folder, ImagesIcon, LucideInspectionPanel, MessageCircleMore, Paperclip, WandIcon } from "lucide-react";
+import { Box, Clock, FileIcon, Folder, ImagesIcon, LucideInspectionPanel, MessageCircleMore, Paperclip, WandIcon, Workflow } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -116,7 +116,7 @@ export default function Home() {
 
           <Link href={"/workflows"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <LucideInspectionPanel size={32} className="mt-3" />
+              <Workflow size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
 

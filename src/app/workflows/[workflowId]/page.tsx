@@ -16,17 +16,88 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from '@/components/ui/textarea';
-import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlayIcon, PlusIcon, SaveIcon, Sparkles, Trash2Icon } from 'lucide-react';
+import { BoxIcon, Edit, ImageIcon, LoaderCircle, Play, PlayIcon, PlusIcon, SaveIcon, Sparkles, Trash2, Trash2Icon } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Markdown from 'react-markdown';
 import { toast, ToastContainer } from 'react-toast';
+
+const SaveDocumentDialog = ({
+    isOpen,
+    setIsOpen,
+    onSave,
+}: {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    onSave: (title: string) => Promise<void>;
+}) => {
+    const [title, setTitle] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (!title.trim()) {
+            toast.error('Please enter a document title');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await onSave(title);
+            setTitle('');
+            setIsOpen(false);
+        } catch (error) {
+            console.error('Error saving document:', error);
+            toast.error('Failed to save document');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Save Document</DialogTitle>
+                    <DialogDescription>
+                        Enter a title for your document
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="title" className="text-right">Title</Label>
+                        <Input
+                            id="title"
+                            placeholder='Document Title'
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="col-span-3"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button
+                        type="submit"
+                        className='cursor-pointer'
+                        onClick={handleSave}
+                        disabled={loading}
+                    >
+                        {loading ? "Saving..." : "Save Document"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 const Page = () => {
     const params = useParams();
     const workflowId = Array.isArray(params.workflowId) ? params.workflowId[0] : params.workflowId;
     const [currentWorkflow, setCurrentWorkflow] = useState<any>(null);
     const [agents, setAgents] = useState<any>([]);
+
+    // Document save dialog states
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [selectedResponse, setSelectedResponse] = useState<any>(null);
 
     // Agent States
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -107,10 +178,14 @@ const Page = () => {
         const initial_json = await get_initial_response.json();
         let content = "No response received.";
 
-        if (sortedAgents[0].model.includes("gpt")) { // Check for gpt models
+        if (sortedAgents[0].model === "gpt-4") {
             content = initial_json?.response?.choices?.[0]?.message?.content || content;
-        } else if (sortedAgents[0].model.includes("gemini")) { // Check for gemini models
+        } else if (sortedAgents[0].model === "gemini-2.0-flash") {
             content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+        } else if (sortedAgents[0].model === "mistral-7b") {
+            content = initial_json?.response;
+        } else if (sortedAgents[0].model === "llama-4-scout") {
+            content = initial_json?.response;
         }
 
         const initial_response_content = content; // Store content for 'initial response' context type
@@ -156,7 +231,7 @@ const Page = () => {
             let context_content = '';
             // Get the most recent response
             const lastResponse = responses[responses.length - 1];
-        
+
             if (current_agent.context === "response") {
                 context_content = lastResponse.content || '';
             } else if (current_agent.context === "prompt") {
@@ -186,10 +261,14 @@ const Page = () => {
             const response_json = await get_response.json();
             let response_content = "No response received.";
 
-            if (current_agent.model.includes("gpt")) {
-                response_content = response_json?.response?.choices?.[0]?.message?.content || response_content;
-            } else if (current_agent.model.includes("gemini")) {
-                response_content = response_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || response_content;
+            if (current_agent.model === "gpt-4") {
+                response_content = response_json?.response?.choices?.[0]?.message?.content || content;
+            } else if (current_agent.model === "gemini-2.0-flash") {
+                response_content = response_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            } else if (current_agent.model === "mistral-7b") {
+                response_content = response_json?.response;
+            } else if (current_agent.model === "llama-4-scout") {
+                response_content = response_json?.response;
             }
 
             // Insert the response
@@ -324,6 +403,19 @@ const Page = () => {
         setEditLoading(false);
     };
 
+    const handleSaveDocument = async (title: string) => {
+        if (selectedResponse) {
+            await supabase.from('documents').insert({
+                title: title,
+                content: selectedResponse.content,
+                user_id: user?.id,
+            });
+
+            toast.success(`Document saved as "${title}"`);
+            setSelectedResponse(null);
+        }
+    };
+
     return (
         <div className='p-5'>
             <ToastContainer></ToastContainer>
@@ -331,8 +423,10 @@ const Page = () => {
                 <div>
                     <p className='text-5xl font-bold text-gray-700'>{currentWorkflow.title}</p>
                     <br />
-
-                    <div className='flex justify-between'>
+                    <hr />
+                    <br />
+                    <p className='font-bold text-2xl'>Agents</p>
+                    <div className='flex justify-between mt-3'>
                         <AddNewAgent
                             isOpen={addDialogOpen}
                             setIsOpen={setAddDialogOpen}
@@ -406,7 +500,7 @@ const Page = () => {
                     <br /><br />
 
                     <Textarea
-                        placeholder="Enter your prompt here..."
+                        placeholder="Enter your prompt here... (Optional)"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         className="w-full min-h-[100px] mt-4"
@@ -417,6 +511,37 @@ const Page = () => {
                     <p className='text-center font-bold text-3xl'>Response will appear here...</p>
 
                     <br />
+                    {agentResponses.length === agents.length && (
+                        <div className='flex gap-3 justify-center'>
+                            <Button variant={'default'} className='cursor-pointer'
+                                onClick={async () => {
+                                    for (let i = 0; i < agents.length; i++) {
+                                        const agent = agents[i];
+                                        const response = agentResponses[i];
+
+                                        await supabase.from('documents').insert({
+                                            title: agent.title,
+                                            content: response.content,
+                                            user_id: user?.id,
+                                        })
+                                    }
+
+                                    toast.success('All responses saved');
+                                }}
+                            > <SaveIcon /> Save All</Button>
+                            <Button variant={'destructive'} className='cursor-pointer'
+                                onClick={async () => {
+                                    // Clear existing responses for this workflow
+                                    await supabase.from('responses').delete().eq('workflow_id', workflowId);
+                                    fetchResponses();
+
+                                    toast.success('All responses deleted');
+                                }}
+                            ><Trash2 /> Delete All</Button>
+                        </div>
+                    )}
+
+                    <br /><br />
                     <div className='flex gap-3 flex-wrap'>
                         {agentResponses.map((res: any) => (
                             <div key={res.id} className='w-[600px] p-5 rounded-xl border cursor-pointer border-gray-300 h-[400px] overflow-scroll relative'>
@@ -430,20 +555,13 @@ const Page = () => {
                                             deleteResponse(res.id);
                                         }}
                                     />
-                                    <SaveIcon 
+                                    <SaveIcon
                                         color='blue'
                                         size={20}
                                         className='cursor-pointer hover:scale-110 transition-transform'
                                         onClick={async () => {
-                                            
-                                            await supabase.from('documents').insert({
-                                                title: "Untitled",
-                                                content: res.content,
-                                                user_id: user?.id,  
-                                            })
-
-                                            toast.success('Document saved as "Untitled" ')
-                                          
+                                            setSelectedResponse(res);
+                                            setSaveDialogOpen(true);
                                         }}
                                     />
                                 </div>
@@ -453,7 +571,12 @@ const Page = () => {
                         ))}
                     </div>
 
-                    
+                    <SaveDocumentDialog
+                        isOpen={saveDialogOpen}
+                        setIsOpen={setSaveDialogOpen}
+                        onSave={handleSaveDocument}
+                    />
+
                 </div>
             ) : (
                 <p>Loading workflow...</p>
@@ -512,7 +635,11 @@ const AddNewAgent = ({
                                 <Sparkles /><SelectValue placeholder="Model" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
+                                <SelectContent>
+                                    <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
+                                    <SelectItem value="llama-4-scout" key={"LLaMA 4 Scout"}>LLaMA 4 Scout</SelectItem>
+                                    <SelectItem value="mistral-7b" key={"Mistral 7b"}>Mistral 7b</SelectItem>
+                                </SelectContent>
                             </SelectContent>
                         </Select>
                     </div>
@@ -596,6 +723,8 @@ const EditDialog = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
+                                <SelectItem value="llama-4-scout" key={"LLaMA 4 Scout"}>LLaMA 4 Scout</SelectItem>
+                                <SelectItem value="mistral-7b" key={"Mistral 7b"}>Mistral 7b</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
