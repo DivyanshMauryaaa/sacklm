@@ -178,15 +178,17 @@ const Page = () => {
         const initial_json = await get_initial_response.json();
         let content = "No response received.";
 
-        if (sortedAgents[0].model === "gpt-4") {
-            content = initial_json?.response?.choices?.[0]?.message?.content || content;
-        } else if (sortedAgents[0].model === "gemini-2.0-flash") {
-            content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
-        } else if (sortedAgents[0].model === "mistral-7b") {
-            content = initial_json?.response;
-        } else if (sortedAgents[0].model === "llama-4-scout") {
-            content = initial_json?.response;
-        }
+        // if (sortedAgents[0].model === "gpt-4") {
+        //     content = initial_json?.response?.choices?.[0]?.message?.content || content;
+        // } else if (sortedAgents[0].model === "gemini-2.0-flash") {
+        //     content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+        // } else if (sortedAgents[0].model === "mistral-7b") {
+        //     content = initial_json?.response;
+        // } else if (sortedAgents[0].model === "llama-4-scout") {
+        //     content = initial_json?.response;
+        // }
+
+        content = initial_json?.text;
 
         const initial_response_content = content; // Store content for 'initial response' context type
         console.log("Initial response:", content)
@@ -261,15 +263,17 @@ const Page = () => {
             const response_json = await get_response.json();
             let response_content = "No response received.";
 
-            if (current_agent.model === "gpt-4") {
-                response_content = response_json?.response?.choices?.[0]?.message?.content || content;
-            } else if (current_agent.model === "gemini-2.0-flash") {
-                response_content = response_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
-            } else if (current_agent.model === "mistral-7b") {
-                response_content = response_json?.response;
-            } else if (current_agent.model === "llama-4-scout") {
-                response_content = response_json?.response;
-            }
+            // if (current_agent.model === "gpt-4") {
+            //     response_content = response_json?.response?.choices?.[0]?.message?.content || content;
+            // } else if (current_agent.model === "gemini-2.0-flash") {
+            //     response_content = response_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            // } else if (current_agent.model === "mistral-7b") {
+            //     response_content = response_json?.response;
+            // } else if (current_agent.model === "llama-4-scout") {
+            //     response_content = response_json?.response;
+            // }
+
+            response_content = response_json?.text;
 
             // Insert the response
             const { error: responseError } = await supabase.from('responses').insert({
