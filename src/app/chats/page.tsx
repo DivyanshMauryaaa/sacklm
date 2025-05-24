@@ -277,16 +277,11 @@ const ChatPage = () => {
 
             let content = "No response received.";
 
-            if (model === "gpt-4") {
-                content = data?.response?.choices?.[0]?.message?.content || content;
-            } else if (model === "gemini-2.0-flash") {
-                content = data?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
-            } else if (model === "mistral-7b") {
-                content = data?.response;
-            } else if (model === "llama-4-scout") {
-                content = data?.response;
-            }
+            content = data?.text || content;
             
+            if (model === "gemini-2.0-flash") {
+                content = data?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            }
 
             const finalMessages = [
                 ...updatedMessages,
@@ -558,7 +553,7 @@ const ChatPage = () => {
                         <div className="flex gap-2">
                             <textarea
                                 rows={1}
-                                maxLength={12000}
+                                // maxLength={12000}
                                 className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem]  max-h-[400px] scroll-smooth overflow-auto duration-150"
                                 placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
                                 value={prompt}
@@ -607,6 +602,8 @@ const ChatPage = () => {
                                     <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
                                     <SelectItem value="mistral-7b" key={"mistral-7b"}>Mistral 7B</SelectItem>
                                     <SelectItem value="llama-4-scout" key={"llama-4-scout"}>LLaMA 4 Scout</SelectItem>
+                                    <SelectItem value="gpt-4" key={"gpt-4"}>GPT 4</SelectItem>
+                                    <SelectItem value="deepseek-v3" key={"deepseek-v3"}>Deepseek v3</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

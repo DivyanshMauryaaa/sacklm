@@ -1,194 +1,130 @@
-'use client';
+'use client'
 
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Box, Clock, FileIcon, Folder, ImagesIcon, LucideInspectionPanel, MessageCircleMore, Paperclip, WandIcon, Workflow } from "lucide-react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button"
+import { useRouter } from 'next/navigation'
+import { Sparkles, Workflow, FileText, MessageSquare, Brain, MousePointerClick } from 'lucide-react'
+import { useUser } from '@clerk/nextjs'
+import { useEffect } from 'react'
 
 export default function Home() {
-  const [time, setTime] = useState('');
-  const [recents, setRecents] = useState<any>([]);
-  const [recentChats, setRecentChats] = useState<any>([]);
+    const router = useRouter()
+    const { user, isLoaded } = useUser()
 
-  const { user } = useUser();
+    useEffect(() => {
+        if (isLoaded && user) {
+            router.push('/dashboard')
+        }
+    }, [isLoaded, user, router])
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-
-      const formattedHours = hours % 12 || 12;
-      const period = hours >= 12 ? 'PM' : 'AM';
-      setTime(`${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchRecents = async () => {
-    const { data, error } = await supabase.from('documents').select('*').eq('user_id', user?.id).limit(3);
-
-    if (!error) setRecents(data);
-  }
-
-  const fetchRecentChats = async () => {
-    const { data, error } = await supabase.from('chats').select('*').eq('user_id', user?.id).limit(3);
-
-    if (!error) setRecentChats(data);
-  }
-
-  useEffect(() => {
-    if (user) {
-      fetchRecents();
-      fetchRecentChats();
+    if (!isLoaded || user) {
+        return null // Return null while loading or if user is logged in (will redirect)
     }
-  }, [user]);
 
-  return (
-    <div>
-      <div className="w-full  border border-gray-300 p-6 rounded-xl ">
-        <Image
-          width={60}
-          height={60}
-          src={user?.imageUrl || "https://picsum.photos/"}
-          alt={user?.id || "Profile Pic not available"}
-          className="rounded-full cursor-pointer"
-        />
-        <p className="text-[70px] font-[600] text-gray-700">
-          {
-            time < "12:00PM" ?
-              ("Good Morning") : time > "4:00PM" ? ("Good Evening") : time > "10:00PM" ? ("Good Afternoon") : "Welcome back "} <span className="
-          bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 font-bold
-        ">{user?.firstName || "Loading..."}</span></p>
-        <p className="text-[30px] font-bold text-gray-700 flex gap-1"><Clock size={32} /> {time}</p>
-        <br />
-        <br />
-
-        <div className="flex gap-4 flex-wrap">
-
-          <Link href={"/chats"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <MessageCircleMore size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Chats</p>
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+            {/* Hero Section */}
+            <div className="container mx-auto px-12 py-24">
+                <div className="flex flex-col items-center text-center">
+                    <div className="flex items-center space-x-2 mb-8">
+                        <Sparkles className="h-12 w-12 text-blue-600" />
+                        <span className="text-4xl font-bold text-gray-800">SackLM</span>
+                    </div>
+                    <h1 className="text-5xl font-bold text-gray-900 mb-6">
+                        Your all in one <span className="text-blue-700">AI Workspace</span>
+                    </h1>
+                    <p className="text-xl text-gray-600 mb-8 max-w-2xl">
+                        Create powerful AI-powered workflows, automate tasks, and boost productivity with our intelligent agent system.
+                    </p>
+                    <div className="flex space-x-4">
+                        <Button size="lg" onClick={() => router.push('/sign-in')} className="cursor-pointer">
+                            Get Started
+                        </Button>
+                        <Button size="lg" variant="outline" onClick={() => router.push('/sign-up')} className="cursor-pointer">
+                            Know more &rarr;
+                        </Button>
+                    </div>
+                </div>
             </div>
-          </Link>
 
-
-          <Link href={"/documents"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <FileIcon size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Documents</p>
+            {/* Features Section */}
+            <div className="bg-gray-50 py-16">
+                <div className="container mx-auto px-6">
+                    <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+                        Powerful Features
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                            <Workflow className="h-12 w-12  mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">AI Workflows</h3>
+                            <p className="text-gray-600">
+                                Create custom workflows with multiple AI agents working together.
+                            </p>
+                        </div>
+                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                            <Brain className="h-12 w-12  mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Multiple Models</h3>
+                            <p className="text-gray-600">
+                                Choose from various AI models including Gemini, GPT-4, and more.
+                            </p>
+                        </div>
+                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                            <FileText className="h-12 w-12  mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Document Management</h3>
+                            <p className="text-gray-600">
+                            Easily save your AI responses with one click and use them later whenever you want from within the app.
+                            </p>
+                        </div>
+                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                            <MessageSquare className="h-12 w-12  mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Smart Context</h3>
+                            <p className="text-gray-600">
+                                Intelligent context handling between agents for better results.
+                            </p>
+                        </div>
+                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                            <MousePointerClick className="h-12 w-12  mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Multiple Purpose Models</h3>
+                            <p className="text-gray-600">
+                                Multiple purpose agents like video generation, image generation, text generation working together to give result.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </Link>
 
-
-          <Link href={"/models"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <Box size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Models</p>
+            {/* CTA Section */}
+            <div className="container mx-auto px-6 py-16">
+                <div className="bg-blue-600 rounded-2xl p-12 text-center">
+                    <h2 className="text-3xl font-bold text-white mb-4">
+                        Ready to Transform Your Work?
+                    </h2>
+                    <p className="text-xl text-blue-100 mb-8">
+                        Start creating powerful AI workflows today.
+                    </p>
+                    <Button
+                        size="lg"
+                        variant="secondary"
+                        onClick={() => router.push('/sign-up')}
+                    >
+                        Get Started Now
+                    </Button>
+                </div>
             </div>
-          </Link>
 
-          <Link href={"/image"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <ImagesIcon size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Image</p>
-            </div>
-          </Link>
-
-          <Link href={"/workflows"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <Workflow size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Workflows</p>
-            </div>
-          </Link>
-
-
-          {/* <Link href={"/organize"}>
-
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <Folder size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Organize</p>
-            </div>
-          </Link> */}
-
+            {/* Footer */}
+            <footer className="bg-gray-900 text-gray-300 py-8">
+                <div className="container mx-auto px-6">
+                    <div className="flex flex-col md:flex-row justify-between items-center">
+                        <div className="flex items-center space-x-2 mb-4 md:mb-0">
+                            <Sparkles className="h-6 w-6 text-blue-500" />
+                            <span className="text-xl font-bold">SackLM</span>
+                        </div>
+                        <div className="text-sm">
+                            © 2024 SackLM. All rights reserved.
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
-
-        <br />
-
-        {/* <div className="flex gap-2">
-          <Link href="/community">
-            <p className="text-gray-600 hover:underline">Community</p>
-          </Link>
-
-          <Link href={"/devapi"}>
-            <p className="text-gray-600 hover:underline">API</p>
-          </Link>
-        </div> */}
-
-      </div>
-
-      <br />
-
-      <div>
-        {recents.length === "0" ? recentChats.length === "0" ? "" : <p className="font-bold text-2xl">Recents</p> : ""}
-        <br />
-
-        <div className="flex gap-3 flex-wrap">
-
-          {recents.map((data: any) => (
-            <div className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] " key={data.id}>
-              <FileIcon size={24} />
-              <Link href={'/documents'}><p className="hover:underline font-bold text-2xl mt-2 ">{data.title}</p></Link>
-            </div>
-          ))}
-
-        </div>
-
-        <br />
-
-        <div className="flex gap-3 flex-wrap">
-          {recentChats.map((data: any) => (
-            <div key={data.id} className="border p-4 border-gray-300 min-w-[300px] rounded-xl transition-all duration-200 cursor-pointer hover:bg-gray-100 max-w-[330px] min-h-[100px] max-h-[160px] ">
-              <MessageCircleMore size={24} />
-              <Link href={'/chats'}><p className="font-bold text-2xl hover:underline mt-2 ">{data.title}</p></Link>
-            </div>
-          ))}
-        </div>
-      </div>
-
-
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-
-    </div>
-  );
+    )
 }

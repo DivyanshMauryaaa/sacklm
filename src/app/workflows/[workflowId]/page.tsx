@@ -166,9 +166,9 @@ const Page = () => {
             },
             body: JSON.stringify({
                 model: sortedAgents[0].model,
-                prompt: prompt || " ",
+                prompt: prompt || "Please proceed with the instructions provided.",
                 chatContext: [],
-                context: ' (this is the initial prompt, if it"s empty, so.... just do what the instructions say, no context unless you get one for this one)', // Initial agent has no previous context
+                context: 'This is the initial prompt. Please follow the instructions provided.',
                 file: null,
                 instructions: sortedAgents[0].instructions
             }),
@@ -176,22 +176,24 @@ const Page = () => {
 
         // Parse the initial response
         const initial_json = await get_initial_response.json();
+        console.log("Initial API Response:", initial_json); // Debug log
+        console.log("First Agent Model:", sortedAgents[0].model); // Debug log
         let content = "No response received.";
 
-        // if (sortedAgents[0].model === "gpt-4") {
-        //     content = initial_json?.response?.choices?.[0]?.message?.content || content;
-        // } else if (sortedAgents[0].model === "gemini-2.0-flash") {
-        //     content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
-        // } else if (sortedAgents[0].model === "mistral-7b") {
-        //     content = initial_json?.response;
-        // } else if (sortedAgents[0].model === "llama-4-scout") {
-        //     content = initial_json?.response;
-        // }
-
-        content = initial_json?.text;
+        // Handle different model response formats
+        if (sortedAgents[0].model === "gemini-2.0-flash") {
+            content = initial_json?.response?.candidates?.[0]?.content?.parts?.[0]?.text || initial_json?.text || content;
+            console.log("Gemini Response Content:", content); // Debug log
+        } else if (sortedAgents[0].model === "gpt-4") {
+            content = initial_json?.response?.choices?.[0]?.message?.content || initial_json?.text || content;
+            console.log("GPT-4 Response Content:", content); // Debug log
+        } else {
+            content = initial_json?.text || initial_json?.response || content;
+            console.log("Other Model Response Content:", content); // Debug log
+        }
 
         const initial_response_content = content; // Store content for 'initial response' context type
-        console.log("Initial response:", content)
+        console.log("Final Initial Response:", content); // Debug log
 
         // Insert the initial response with the correct agent ID and index
         const { data: initialResponseData, error: initialResponseError } = await supabase.from('responses').insert({
@@ -215,7 +217,7 @@ const Page = () => {
 
         for (agent_index = 1; agent_index < sortedAgents.length; ++agent_index) {
             let current_agent = sortedAgents[agent_index];
-            console.log("Current agent at: ", current_agent + " " + current_agent.index);
+            console.log("Current agent at: ", current_agent.title + " " + current_agent.index);
 
             // Get all responses up to this point, sorted by index
             const { data: responses, error: responsesError } = await supabase
@@ -641,8 +643,10 @@ const AddNewAgent = ({
                             <SelectContent>
                                 <SelectContent>
                                     <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
-                                    <SelectItem value="llama-4-scout" key={"LLaMA 4 Scout"}>LLaMA 4 Scout</SelectItem>
-                                    <SelectItem value="mistral-7b" key={"Mistral 7b"}>Mistral 7b</SelectItem>
+                                    <SelectItem value="mistral-7b" key={"mistral-7b"}>Mistral 7B</SelectItem>
+                                    <SelectItem value="llama-4-scout" key={"llama-4-scout"}>LLaMA 4 Scout</SelectItem>
+                                    <SelectItem value="gpt-4" key={"gpt-4"}>GPT 4</SelectItem>
+                                    <SelectItem value="deepseek-v3" key={"deepseek-v3"}>Deepseek v3</SelectItem>
                                 </SelectContent>
                             </SelectContent>
                         </Select>
@@ -727,8 +731,10 @@ const EditDialog = ({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
-                                <SelectItem value="llama-4-scout" key={"LLaMA 4 Scout"}>LLaMA 4 Scout</SelectItem>
-                                <SelectItem value="mistral-7b" key={"Mistral 7b"}>Mistral 7b</SelectItem>
+                                <SelectItem value="mistral-7b" key={"mistral-7b"}>Mistral 7B</SelectItem>
+                                <SelectItem value="llama-4-scout" key={"llama-4-scout"}>LLaMA 4 Scout</SelectItem>
+                                <SelectItem value="gpt-4" key={"gpt-4"}>GPT 4</SelectItem>
+                                <SelectItem value="deepseek-v3" key={"deepseek-v3"}>Deepseek v3</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

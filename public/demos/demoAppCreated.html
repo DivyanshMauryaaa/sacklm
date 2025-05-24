@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium App Landing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ffffff', // Light text color
+                        secondary: '#1a202c', // Dark background color (slate-800)
+                        darkbg: '#121820', // even darker background color
+                        lightbg: '#2d3748', // slate-600 lighter background
+                        lighttext: '#cbd5e0', // slate-300 Light grey text
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1s ease-in-out',
+                        'slide-up': 'slideUp 0.8s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #ffffff 0%, #999999 100%);
+            /* Light gradient */
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            /* Stronger shadow for dark mode */
+        }
+
+        .nav-link {
+            position: relative;
+            color: #cbd5e0;
+            /* Light grey for nav links */
+        }
+
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: #fff;
+            /* White underline */
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover:after {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased bg-secondary text-primary dark"> <!-- Added 'dark' class to body -->
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-lightbg shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold gradient-text">AppName</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#hero" class="nav-link">Home</a>
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#services" class="nav-link">Services</a>
+                    <a href="#pricing" class="nav-link">Pricing</a>
+                    <a href="#reviews" class="nav-link">Reviews</a>
+                    <a href="#about" class="nav-link">About</a>
+                </div>
+                <div class="md:hidden">
+                    <button class="outline-none mobile-menu-button">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="py-20 bg-darkbg">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-10 md:mb-0 animate-fade-in">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6">Revolutionize Your Workflow With <span
+                        class="gradient-text">AppName</span></h1>
+                <p class="text-lg mb-8 text-lighttext">The all-in-one solution for modern businesses. Streamline
+                    processes, boost productivity, and scale effortlessly.</p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button
+                        class="bg-primary text-secondary px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition duration-300 transform hover:scale-105 hover:text-white">Get
+                        Started</button>
+                    <button
+                        class="border-2 border-primary px-8 py-3 rounded-lg font-medium hover:bg-gray-700 transition duration-300 transform hover:scale-105">Learn
+                        More</button>
+                </div>
+            </div>
+            <div class="md:w-1/2 animate-slide-up">
+                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+                    alt="App Dashboard" class="rounded-lg shadow-2xl">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-secondary">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 animate-fade-in">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
+                <p class="max-w-2xl mx-auto text-lighttext">Designed to help you work smarter, not harder. Our app comes
+                    packed with everything you need.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-bolt text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Lightning Fast</h3>
+                    <p class="text-lighttext">Optimized for speed with our proprietary technology to ensure blazing fast
+                        performance.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up"
+                    style="animation-delay: 0.2s;">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-shield-alt text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Bank-Level Security</h3>
+                    <p class="text-lighttext">Enterprise-grade security protocols to keep your data safe and protected.
+                    </p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up"
+                    style="animation-delay: 0.4s;">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-sync-alt text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Seamless Sync</h3>
+                    <p class="text-lighttext">Real-time synchronization across all your devices for uninterrupted
+                        workflow.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up"
+                    style="animation-delay: 0.6s;">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-line text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Advanced Analytics</h3>
+                    <p class="text-lighttext">Powerful insights and analytics to help you make data-driven decisions.
+                    </p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up"
+                    style="animation-delay: 0.8s;">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-cogs text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Customizable</h3>
+                    <p class="text-lighttext">Tailor the app to your exact needs with our flexible customization
+                        options.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md transition duration-300 card-hover animate-slide-up"
+                    style="animation-delay: 1s;">
+                    <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-headset text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">24/7 Support</h3>
+                    <p class="text-lighttext">Our dedicated support team is always available to help you with any
+                        issues.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-20 bg-darkbg">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
+                <p class="max-w-2xl mx-auto text-lighttext">We offer comprehensive solutions to meet all your business
+                    needs.</p>
+            </div>
+            <div class="flex flex-wrap -mx-4">
+                <div class="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+                    <div class="bg-lightbg p-8 rounded-lg shadow-md h-full transition duration-300 card-hover">
+                        <div class="text-5xl text-primary mb-6">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Mobile Optimization</h3>
+                        <p class="text-lighttext mb-4">Fully responsive design that works perfectly on all mobile
+                            devices.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> iOS
+                                compatibility</li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Android
+                                compatibility</li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Tablet
+                                responsive</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+                    <div class="bg-lightbg p-8 rounded-lg shadow-md h-full transition duration-300 card-hover">
+                        <div class="text-5xl text-primary mb-6">
+                            <i class="fas fa-cloud"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Cloud Integration</h3>
+                        <p class="text-lighttext mb-4">Seamless integration with all major cloud storage providers.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Google Drive
+                            </li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Dropbox</li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> OneDrive</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+                    <div class="bg-lightbg p-8 rounded-lg shadow-md h-full transition duration-300 card-hover">
+                        <div class="text-5xl text-primary mb-6">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Data Migration</h3>
+                        <p class="text-lighttext mb-4">Effortless transfer of your existing data to our platform.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> CSV imports
+                            </li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> API integration
+                            </li>
+                            <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Manual entry
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 bg-secondary">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+                <p class="max-w-2xl mx-auto text-lighttext">Choose the plan that fits your needs. No hidden fees, no
+                    surprises.</p>
+            </div>
+            <div class="flex flex-wrap justify-center -mx-4">
+                <!-- Basic Plan -->
+                <div class="w-full md:w-1/3 px-4 mb-8">
+                    <div
+                        class="bg-lightbg rounded-lg shadow-lg overflow-hidden transition duration-300 transform hover:scale-105">
+                        <div class="px-8 py-6 bg-darkbg">
+                            <h3 class="text-xl font-bold mb-2">Basic</h3>
+                            <p class="text-lighttext">Perfect for individuals and small teams</p>
+                        </div>
+                        <div class="px-8 py-6">
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">$9</span>
+                                <span class="text-lighttext">/month</span>
+                            </div>
+                            <ul class="mb-8 space-y-3">
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 10 Projects
+                                </li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 5GB Storage
+                                </li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Basic
+                                    Analytics</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Email
+                                    Support</li>
+                            </ul>
+                            <button
+                                class="w-full bg-primary text-secondary py-3 rounded-lg font-medium hover:bg-gray-800 transition duration-300 hover:text-white">Get
+                                Started</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Pro Plan -->
+                <div class="w-full md:w-1/3 px-4 mb-8">
+                    <div
+                        class="bg-lightbg rounded-lg shadow-xl overflow-hidden transform scale-105 border-2 border-primary transition duration-300 hover:scale-110">
+                        <div class="px-8 py-4 bg-primary text-secondary text-center">
+                            <span class="text-sm font-bold">MOST POPULAR</span>
+                        </div>
+                        <div class="px-8 py-6 bg-darkbg">
+                            <h3 class="text-xl font-bold mb-2">Professional</h3>
+                            <p class="text-lighttext">For growing businesses and teams</p>
+                        </div>
+                        <div class="px-8 py-6">
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">$29</span>
+                                <span class="text-lighttext">/month</span>
+                            </div>
+                            <ul class="mb-8 space-y-3">
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Unlimited
+                                    Projects</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 50GB
+                                    Storage</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Advanced
+                                    Analytics</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Priority
+                                    Support</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> API Access
+                                </li>
+                            </ul>
+                            <button
+                                class="w-full bg-primary text-secondary py-3 rounded-lg font-medium hover:bg-gray-800 transition duration-300 hover:text-white">Get
+                                Started</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Enterprise Plan -->
+                <div class="w-full md:w-1/3 px-4 mb-8">
+                    <div
+                        class="bg-lightbg rounded-lg shadow-lg overflow-hidden transition duration-300 transform hover:scale-105">
+                        <div class="px-8 py-6 bg-darkbg">
+                            <h3 class="text-xl font-bold mb-2">Enterprise</h3>
+                            <p class="text-lighttext">For large organizations</p>
+                        </div>
+                        <div class="px-8 py-6">
+                            <div class="mb-6">
+                                <span class="text-4xl font-bold">$99</span>
+                                <span class="text-lighttext">/month</span>
+                            </div>
+                            <ul class="mb-8 space-y-3">
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Unlimited
+                                    Projects</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 1TB Storage
+                                </li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Premium
+                                    Analytics</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> 24/7
+                                    Support</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Dedicated
+                                    Account Manager</li>
+                                <li class="flex items-center"><i class="fas fa-check text-primary mr-2"></i> Custom
+                                    Solutions</li>
+                            </ul>
+                            <button
+                                class="w-full bg-primary text-secondary py-3 rounded-lg font-medium hover:bg-gray-800 transition duration-300 hover:text-white">Contact
+                                Sales</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section id="reviews" class="py-20 bg-darkbg">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">What Our Customers Say</h2>
+                <p class="max-w-2xl mx-auto text-lighttext">Don't just take our word for it. Here's what our customers
+                    say about us.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Review 1 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah Johnson"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Sarah Johnson</h4>
+                            <p class="text-lighttext text-sm">Marketing Director</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-lighttext">"This app has completely transformed how our team works. The productivity
+                        gains have been incredible, and the customer support is exceptional."</p>
+                </div>
+                <!-- Review 2 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/men/44.jpg" alt="Michael Chen"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Michael Chen</h4>
+                            <p class="text-lighttext text-sm">CTO, TechStart</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-lighttext">"The API integration capabilities are unmatched. We've been able to
+                        connect all our systems seamlessly, saving hundreds of engineering hours."</p>
+                </div>
+                <!-- Review 3 -->
+                <div class="bg-lightbg p-8 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Emily Rodriguez"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Emily Rodriguez</h4>
+                            <p class="text-lighttext text-sm">Small Business Owner</p>
+                        </div>
+                    </div>
+                    <div class="flex mb-4">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                    </div>
+                    <p class="text-lighttext">"As a small business owner, I needed something affordable but powerful.
+                        This app gives me enterprise-level features at a fraction of the cost."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 bg-secondary">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-10 md:mb-0">
+                    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+                        alt="Our Team" class="rounded-lg shadow-xl">
+                </div>
+                <div class="md:w-1/2 md:pl-12">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6">About Our Company</h2>
+                    <p class="text-lg mb-6 text-lighttext">Founded in 2015, we're a team of passionate professionals
+                        dedicated to creating software that makes a real difference in people's work lives.</p>
+                    <p class="mb-8 text-lighttext">Our mission is to simplify complex workflows and empower businesses
+                        of all sizes with affordable, enterprise-grade technology solutions. We believe in building
+                        products that are intuitive, powerful, and enjoyable to use.</p>
+                    <div class="flex flex-wrap -mx-2 mb-8">
+                        <div class="w-1/2 px-2 mb-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-users text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">50+ Employees</h4>
+                                    <p class="text-sm text-lighttext">Dedicated team</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-1/2 px-2 mb-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-globe text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Global Reach</h4>
+                                    <p class="text-sm text-lighttext">Serving 100+ countries</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-1/2 px-2">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-star text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">5-Star Reviews</h4>
+                                    <p class="text-sm text-lighttext">Customer satisfaction</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-1/2 px-2">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-trophy text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Award Winning</h4>
+                                    <p class="text-sm text-lighttext">Industry recognition</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        class="bg-primary text-secondary px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition duration-300 hover:text-white">Learn
+                        More About Us</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-primary text-secondary">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Your Business?</h2>
+            <p class="max-w-2xl mx-auto mb-8 text-lighttext">Join thousands of satisfied customers who are already
+                experiencing the benefits of our platform.</p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <button
+                    class="bg-secondary text-primary px-8 py-3 rounded-lg font-medium hover:bg-gray-200 transition duration-300 transform hover:scale-105 hover:text-black">Start
+                    Free Trial</button>
+                <button
+                    class="border-2 border-secondary px-8 py-3 rounded-lg font-medium hover:bg-gray-900 transition duration-300 transform hover:scale-105 hover:text-white text-black">Schedule
+                    Demo</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-darkbg py-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-8 md:mb-0">
+                    <h3 class="text-2xl font-bold gradient-text mb-4">AppName</h3>
+                    <p class="max-w-xs text-lighttext mb-4">The all-in-one solution for modern businesses.</p>
+                    <div class="flex space-x-4">
+                        <a href="#"
+                            class="w-10 h-10 bg-lightbg rounded-full flex items-center justify-center text-primary hover:bg-gray-200 transition duration-300">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#"
+                            class="w-10 h-10 bg-lightbg rounded-full flex items-center justify-center text-primary hover:bg-gray-200 transition duration-300">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#"
+                            class="w-10 h-10 bg-lightbg rounded-full flex items-center justify-center text-primary hover:bg-gray-200 transition duration-300">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="#"
+                            class="w-10 h-10 bg-lightbg rounded-full flex items-center justify-center text-primary hover:bg-gray-200 transition duration-300">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="font-bold mb-4 text-primary">Product</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Features</a></li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Pricing</a></li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Integrations</a>
+                            </li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Updates</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-4 text-primary">Company</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-lighttext hover:text-primary transition duration-300">About</a>
+                            </li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Careers</a></li>
+                            <li><a href="#" class="text-lighttext hover:text-primary transition duration-300">Blog</a>
+                            </li>
+                            <li><a href="#" class="text-lighttext hover:text-primary transition duration-300">Press</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-4 text-primary">Support</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Documentation</a>
+                            </li>
+                            <li><a href="#" class="text-lighttext hover:text-primary transition duration-300">Help
+                                    Center</a></li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Community</a></li>
+                            <li><a href="#"
+                                    class="text-lighttext hover:text-primary transition duration-300">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-1 2 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-lighttext mb-4 md:mb-0">© 2023 AppName. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-lighttext hover:text-primary transition duration-300">Privacy Policy</a>
+                    <a href="#" class="text-lighttext hover:text-primary transition duration-300">Terms of Service</a>
+                    <a href="#" class="text-lighttext hover:text-primary transition duration-300">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+
+
+    </footer>
+    <!-- Mobile Menu (hidden by default) -->
+    <div class="mobile-menu hidden md:hidden fixed inset-0 z-50 bg-lightbg bg-opacity-95">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex justify-between items-center mb-8">
+                <span class="text-2xl font-bold gradient-text">AppName</span>
+                <button class="mobile-menu-close outline-none">
+                    <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex flex-col space-y-6">
+                <a href="#hero" class="text-xl font-medium text-primary">Home</a>
+                <a href="#features" class="text-xl font-medium text-primary">Features</a>
+                <a href="#services" class="text-xl font-medium text-primary">Services</a>
+                <a href="#pricing" class="text-xl font-medium text-primary">Pricing</a>
+                <a href="#reviews" class="text-xl font-medium text-primary">Reviews</a>
+                <a href="#about" class="text-xl font-medium text-primary">About</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.querySelector('.mobile-menu-button');
+        const mobileMenuClose = document.querySelector('.mobile-menu-close');
+        const mobileMenu = document.querySelector('.mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.remove('hidden');
+        });
+
+        mobileMenuClose.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+
+                    // Close mobile menu if open
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        // Scroll animation trigger
+        document.addEventListener('DOMContentLoaded', () => {
+            const animateElements = document.querySelectorAll('.animate-fade-in, .animate-slide-up');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            animateElements.forEach(element => {
+                element.style.opacity = '0';
+                if (element.classList.contains('animate-slide-up')) {
+                    element.style.transform = 'translateY(20px)';
+                }
+                observer.observe(element);
+            });
+        });
+    </script>
+</body>
+
+</html>
