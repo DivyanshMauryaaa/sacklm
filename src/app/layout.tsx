@@ -28,7 +28,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased p-5`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           cz-shortcut-listen="false"
         >
           <header className="flex justify-between items-center p-4 gap-4 h-16 border-b border-gray-300">

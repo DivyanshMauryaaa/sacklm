@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Sparkles, Workflow, FileText, MessageSquare, Brain, MousePointerClick } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import { useEffect } from 'react'
+import Image from 'next/image'
 
 export default function Home() {
     const router = useRouter()
@@ -21,25 +22,31 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white scroll-smooth">
             {/* Hero Section */}
             <div className="container mx-auto px-12 py-24">
                 <div className="flex flex-col items-center text-center">
-                    <div className="flex items-center space-x-2 mb-8">
-                        <Sparkles className="h-12 w-12 text-blue-600" />
-                        <span className="text-4xl font-bold text-gray-800">SackLM</span>
-                    </div>
+
+                    <Image
+                        src="/home.png"
+                        width={1000}
+                        height={450}
+                        alt="AI Workspace"
+                        className="rounded-lg ring-2 ring-gray-300 user-select-none"
+                    />
+
+                    <br /><br />
                     <h1 className="text-5xl font-bold text-gray-900 mb-6">
                         Your all in one <span className="text-blue-700">AI Workspace</span>
                     </h1>
-                    <p className="text-xl text-gray-600 mb-8 max-w-2xl">
-                        Create powerful AI-powered workflows, automate tasks, and boost productivity with our intelligent agent system.
+                    <p className="text-md text-gray-600 mb-8 max-w-2xl">
+                        Meet SackLM — an intelligent, flexible platform where your AI personas, smart documents, and deep conversations come together. Say goodbye to scattered tools and hello to organized brilliance.
                     </p>
                     <div className="flex space-x-4">
                         <Button size="lg" onClick={() => router.push('/sign-in')} className="cursor-pointer">
                             Get Started
                         </Button>
-                        <Button size="lg" variant="outline" onClick={() => router.push('/sign-up')} className="cursor-pointer">
+                        <Button size="lg" variant="outline" onClick={() => router.push('#features')} className="cursor-pointer">
                             Know more &rarr;
                         </Button>
                     </div>
@@ -47,7 +54,7 @@ export default function Home() {
             </div>
 
             {/* Features Section */}
-            <div className="bg-gray-50 py-16">
+            <div className="bg-gray-50 py-16" id="features">
                 <div className="container mx-auto px-6">
                     <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
                         Powerful Features
@@ -71,7 +78,7 @@ export default function Home() {
                             <FileText className="h-12 w-12  mb-4" />
                             <h3 className="text-xl font-semibold mb-2">Document Management</h3>
                             <p className="text-gray-600">
-                            Easily save your AI responses with one click and use them later whenever you want from within the app.
+                                Easily save your AI responses with one click and use them later whenever you want from within the app.
                             </p>
                         </div>
                         <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
@@ -89,6 +96,32 @@ export default function Home() {
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div className="bg-gray-50 py-16 px-5">
+                <div className="m-auto">
+                    <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+                        AI Workflows
+                    </h2>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <Image
+                            src="/workflows.png"
+                            width={1000}
+                            height={450}
+                            alt="AI Workflow"
+                            className="rounded-lg ring-2 ring-gray-300 user-select-none"
+                        />
+                                                <Image
+                            src="/workflow-demo.png"
+                            width={1000}
+                            height={450}
+                            alt="AI Workflow"
+                            className="rounded-lg ring-2 ring-gray-300 user-select-none"
+                        />
+                    </div>
+
                 </div>
             </div>
 
