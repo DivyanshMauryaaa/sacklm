@@ -113,7 +113,7 @@ export default function Home() {
                             alt="AI Workflow"
                             className="rounded-lg ring-2 ring-gray-300 user-select-none"
                         />
-                                                <Image
+                        <Image
                             src="/workflow-demo.png"
                             width={1000}
                             height={450}

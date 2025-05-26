@@ -18,7 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { models } from "../globals";
+import { Image, Search, X } from 'lucide-react';
 
 const ChatPage = () => {
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -34,6 +34,10 @@ const ChatPage = () => {
     const [modelInstruction, setModelInstruction] = useState('');
     const [userModels, setUserModels] = useState<any>([]);
     const [model, setModel] = useState('gemini-2.0-flash');
+    // Add these state variables to your component
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+
 
     const fetchModels = async () => {
         const { data, error } = await supabase.from('models').select('*').eq('user_id', user?.id);
@@ -232,7 +236,7 @@ const ChatPage = () => {
         }
     };
 
-    const handleSubmitPrompt = async (userPrompt: string) => {
+    const handleSubmitPrompt = async (userPrompt: string, imageUrl?: string) => {
         if (!userPrompt.trim()) return;
 
         setLoadingResponse(true);
@@ -240,7 +244,12 @@ const ChatPage = () => {
         // Add the user prompt to the chat history
         const updatedMessages = [
             ...chatMessages,
-            { role: 'user', content: userPrompt }
+            {
+                role: 'user',
+                content: userPrompt,
+                imageUrl: imageUrl || undefined,
+                timestamp: new Date().toISOString()
+            }
         ];
         setChatMessages(updatedMessages);
 
@@ -251,13 +260,9 @@ const ChatPage = () => {
                 .map(msg => msg.content)
                 .join("\n\n");
 
-            const promptWithContext = conversationContext
-                ? `Previous conversation:\n${conversationContext}\n\nUser: ${userPrompt}`
-                : userPrompt;
-
             const instructions = modelInstruction || "";
 
-            // Call your Next.js API route
+            // Call your enhanced Next.js API route
             const res = await fetch("/api/generate", {
                 method: "POST",
                 headers: {
@@ -265,38 +270,75 @@ const ChatPage = () => {
                 },
                 body: JSON.stringify({
                     model,
-                    prompt: promptWithContext,
-                    chatContext: chatMessages, // full chat context (could be sliced if too long)
+                    prompt: userPrompt, // Send clean prompt, let API handle context
+                    chatContext: chatMessages.slice(-10), // Send more context but limit to last 10 messages
                     context: conversationContext,
                     file: null,
-                    instructions
+                    instructions,
+                    imageUrl: imageUrl || undefined, // Pass image URL if provided
+                    enableWebSearch: userPrompt.toLowerCase().includes('/search') || undefined // Optional explicit enable
                 }),
             });
+
+            if (!res.ok) {
+                throw new Error(`API request failed: ${res.status}`);
+            }
 
             const data = await res.json();
 
             let content = "No response received.";
+            let searchResults = null;
+            let imageAnalysis = null;
+            let commandsUsed = null;
 
-            content = data?.text || content;
-            
-            if (model === "gemini-2.0-flash") {
-                content = data?.response?.candidates?.[0]?.content?.parts?.[0]?.text || content;
+            // Extract response based on your API structure
+            if (data?.text) {
+                content = data.text;
+            } else if (model === "gemini-2.0-flash" && data?.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                content = data.response.candidates[0].content.parts[0].text;
             }
+
+            // Extract additional data from enhanced API
+            searchResults = data?.searchResults || null;
+            imageAnalysis = data?.imageAnalysis || null;
+            commandsUsed = data?.commands || null;
+
+            // Create enhanced message object
+            const assistantMessage = {
+                role: "model",
+                content,
+                searchResults,
+                imageAnalysis,
+                commandsUsed,
+                timestamp: new Date().toISOString(),
+                metadata: data?.metadata || null
+            };
 
             const finalMessages = [
                 ...updatedMessages,
-                { role: "model", content }
+                assistantMessage
             ];
 
             setChatMessages(finalMessages);
 
-            // Auto-save chat to Supabase
+            // Log enhanced features usage
+            if (searchResults?.results?.length > 0) {
+                console.log(`🔍 Web search executed: "${searchResults.query}" - ${searchResults.results.length} results`);
+            }
+            if (imageAnalysis?.description) {
+                console.log(`📸 Image analyzed: ${imageUrl}`);
+            }
+
+            // Auto-save chat to Supabase with enhanced data
             if (user) {
                 setTimeout(async () => {
                     if (activeChatId) {
                         const { error } = await supabase
                             .from('chats')
-                            .update({ content: { messages: finalMessages } })
+                            .update({
+                                content: { messages: finalMessages },
+                                updated_at: new Date().toISOString()
+                            })
                             .eq('id', activeChatId)
                             .eq('user_id', user.id);
 
@@ -310,24 +352,28 @@ const ChatPage = () => {
                             ));
                         }
                     } else {
-                        const title = userPrompt.length > 20
-                            ? userPrompt.slice(0, 20) + "..."
-                            : userPrompt;
+                        // Generate title from clean prompt if commands were used
+                        const titlePrompt = commandsUsed?.cleanPrompt || userPrompt;
+                        const title = titlePrompt.length > 30
+                            ? titlePrompt.slice(0, 30) + "..."
+                            : titlePrompt;
 
-                        const { data, error } = await supabase
+                        const { data: insertData, error } = await supabase
                             .from('chats')
                             .insert({
                                 user_id: user.id,
                                 title,
-                                content: { messages: finalMessages }
+                                content: { messages: finalMessages },
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
                             })
                             .select('id')
                             .single();
 
                         if (error) {
                             console.error('Auto-save insert error:', error);
-                        } else if (data) {
-                            const newChatId = data.id;
+                        } else if (insertData) {
+                            const newChatId = insertData.id;
                             setChatHistory(prev => [
                                 { id: newChatId, title, messages: finalMessages },
                                 ...prev
@@ -340,15 +386,123 @@ const ChatPage = () => {
 
         } catch (error) {
             console.error("Error fetching response:", error);
+
+            // Enhanced error message with more context
+            let errorMessage = "Sorry, I encountered an error while processing your request.";
+
+            if (error instanceof Error) {
+                if (error.message.includes('API request failed')) {
+                    errorMessage = "The AI service is currently unavailable. Please try again in a moment.";
+                } else if (error.message.includes('network')) {
+                    errorMessage = "Network error. Please check your connection and try again.";
+                }
+            }
+
             setChatMessages((prevMessages) => [
                 ...prevMessages,
-                { role: "model", content: "Sorry, I encountered an error while processing your request." }
+                {
+                    role: "model",
+                    content: errorMessage,
+                    error: true,
+                    timestamp: new Date().toISOString()
+                }
             ]);
         } finally {
             setLoadingResponse(false);
             setPrompt("");
         }
     };
+
+    // Enhanced submit handler for image uploads
+    const handleSubmitWithImage = async (userPrompt: string, imageFile?: File) => {
+        let imageUrl: string | undefined;
+
+        if (imageFile) {
+            try {
+                // Upload image to your preferred storage (Supabase, Cloudinary, etc.)
+                const formData = new FormData();
+                formData.append('file', imageFile);
+
+                const uploadRes = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    imageUrl = uploadData.url;
+                } else {
+                    console.error('Image upload failed');
+                    // You might want to show an error toast here
+                }
+            } catch (error) {
+                console.error('Image upload error:', error);
+            }
+        }
+
+        await handleSubmitPrompt(userPrompt, imageUrl);
+    };
+
+    // Helper function to detect if message has enhanced features
+    const hasEnhancedFeatures = (message: any) => {
+        return message.searchResults?.results?.length > 0 ||
+            message.imageAnalysis?.description ||
+            message.commandsUsed?.detectedSearch ||
+            message.commandsUsed?.detectedImage;
+    };
+
+    // Helper function to format message with enhanced features for display
+    const formatMessageContent = (message: any) => {
+        let content = message.content;
+
+        // Add search results indicator
+        if (message.searchResults?.results?.length > 0) {
+            content = `🔍 Web search performed for: "${message.searchResults.query}"\n\n${content}`;
+        }
+
+        // Add image analysis indicator  
+        if (message.imageAnalysis?.description) {
+            content = `📸 Image analyzed\n\n${content}`;
+        }
+
+        return content;
+    };
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                alert('Image size should be less than 10MB');
+                return;
+            }
+
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Clear image
+    const clearImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+    };
+
+    // Enhanced submit handler
+    const handleEnhancedSubmit = async () => {
+        if (!prompt.trim()) return;
+
+        if (selectedImage) {
+            await handleSubmitWithImage(prompt, selectedImage);
+            clearImage();
+        } else {
+            await handleSubmitPrompt(prompt);
+        }
+    };
+
 
     const saveDocument = async (title: string, content: string) => {
         const { error } = await supabase.from('documents').insert([
@@ -544,39 +698,83 @@ const ChatPage = () => {
                                 onClick={saveCurrentChat}
                                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-all flex-shrink-0"
                                 title="Save conversation"
-
                             >
                                 <Save size={18} />
                             </button>
                         )}
 
+                        {/* Image Preview */}
+                        {imagePreview && (
+                            <div className="mb-2 relative inline-block">
+                                <img
+                                    src={imagePreview}
+                                    alt="Upload preview"
+                                    className="max-w-32 max-h-32 rounded-lg border"
+                                />
+                                <button
+                                    onClick={clearImage}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Command Helper */}
+                        {prompt.includes('/') && (
+                            <div className="mb-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                                💡 Commands: <code>/search query</code> for web search, <code>/image</code> for image analysis
+                            </div>
+                        )}
+
                         <div className="flex gap-2">
-                            <textarea
-                                rows={1}
-                                // maxLength={12000}
-                                className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem]  max-h-[400px] scroll-smooth overflow-auto duration-150"
-                                placeholder={user ? "Type your message here..." : "Sign in to start chatting"}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey && user) {
-                                        e.preventDefault();
-                                        handleSubmitPrompt(prompt);
+                            <div className="flex flex-col gap-2 flex-grow">
+                                <textarea
+                                    rows={1}
+                                    className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem] max-h-[400px] scroll-smooth overflow-auto duration-150"
+                                    placeholder={
+                                        user
+                                            ? "Type your message here... (Try /search for web search)"
+                                            : "Sign in to start chatting"
                                     }
-                                }}
-                                disabled={loadingResponse || !user}
-                                autoFocus
-                            />
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey && user) {
+                                            e.preventDefault();
+                                            handleEnhancedSubmit();
+                                        }
+                                    }}
+                                    disabled={loadingResponse || !user}
+                                    autoFocus
+                                />
+                            </div>
 
-                            <button
-                                className={`bg-black text-white rounded-lg p-3 px-5 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user) ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                                onClick={() => handleSubmitPrompt(prompt)}
-                                disabled={!prompt.trim() || loadingResponse || !user}
-                            >
-                                <SendHorizonal size={18} />
-                            </button>
+                            {/* Image Upload Button */}
+                            <div className="flex flex-col gap-2">
+                                <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                        disabled={loadingResponse || !user}
+                                    />
+                                    <Image size={18} />
+                                </label>
 
+                                {/* Send Button */}
+                                <button
+                                    className={`bg-black text-white rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user)
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : ''
+                                        }`}
+                                    onClick={handleEnhancedSubmit}
+                                    disabled={!prompt.trim() || loadingResponse || !user}
+                                >
+                                    {selectedImage ? <Image size={18} /> : <SendHorizonal size={18} />}
+                                </button>
+                            </div>
                         </div>
 
                         <br />
@@ -606,9 +804,15 @@ const ChatPage = () => {
                                     <SelectItem value="deepseek-v3" key={"deepseek-v3"}>Deepseek v3</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {/* Search indicator */}
+                            {prompt.toLowerCase().includes('/search') && (
+                                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                    <Search size={12} />
+                                    Web Search
+                                </div>
+                            )}
                         </div>
-
-
                     </div>
                 </div>
 

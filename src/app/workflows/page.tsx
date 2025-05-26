@@ -94,7 +94,7 @@ const page = () => {
                                 className='hover:text-red-600'
                             />
                             <br />
-                            <Workflow size={32} className='border-t border-gray-300'/>
+                            <Workflow size={32} className='border-gray-300'/>
                             <div
                                 contentEditable 
                                 className='font-[600] mt-1 text-3xl text-black outline-none'

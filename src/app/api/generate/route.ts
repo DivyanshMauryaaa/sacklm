@@ -1,141 +1,307 @@
-// app/api/generate/route.ts
+// app/api/generate/route.tsx
 import { supabase } from "@/lib/supabase";
-import { useUser } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
-function parseSackLang(input: string) {
-    const matches = input.match(/<sack-(\w+)-gen.*?prompt="(.*?)"(.*?)\/?>/);
-    if (!matches) return null;
+// Command detection interface
+interface CommandDetection {
+    hasSearch: boolean;
+    hasImageAnalysis: boolean;
+    searchQuery?: string;
+    imageUrl?: string;
+    cleanPrompt: string;
+}
+
+// Detect commands in prompt
+function detectCommands(prompt: string, imageUrl?: string): CommandDetection {
+    let cleanPrompt = prompt;
+    let hasSearch = false;
+    let hasImageAnalysis = false;
+    let searchQuery = "";
+
+    // Check for /search command
+    const searchMatch = prompt.match(/\/search\s+(.+?)(?:\s|$)/i);
+    if (searchMatch) {
+        hasSearch = true;
+        searchQuery = searchMatch[1].trim();
+        cleanPrompt = prompt.replace(/\/search\s+/i, '').trim();
+    }
+
+    // Check for /image command or if imageUrl is provided
+    const imageMatch = prompt.match(/\/image\s+(.+?)(?:\s|$)/i);
+    if (imageMatch || imageUrl) {
+        hasImageAnalysis = true;
+        if (imageMatch) {
+            cleanPrompt = prompt.replace(/\/image\s+/i, '').trim();
+        }
+    }
+
+    // Auto-detect search keywords if no explicit command
+    if (!hasSearch) {
+        const searchKeywords = [
+            'search', 'find', 'latest', 'current', 'news', 'recent',
+            'today', 'yesterday', 'this week', 'what happened',
+            'weather', 'stock price', 'trending', 'update', 'when did',
+            'who is', 'what is happening', 'breaking news'
+        ];
+
+        const needsSearch = searchKeywords.some(keyword =>
+            prompt.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (needsSearch) {
+            hasSearch = true;
+            searchQuery = extractSearchQuery(prompt);
+        }
+    }
+
     return {
-        type: matches[1],
-        prompt: matches[2],
-        raw: input
+        hasSearch,
+        hasImageAnalysis,
+        searchQuery: searchQuery || undefined,
+        imageUrl,
+        cleanPrompt
     };
 }
 
-const generateMedia = async (prompt: string, type: string, AudioText: string, imgSettings: any, videoSettings: any) => {
-    if (type === "image") {
-        const settings = imgSettings;
-        
-        const width = settings.width;
-        const height = settings.height;
-        const seed = settings.seed;
-        const steps = settings.steps;
+// Extract search query from prompt
+function extractSearchQuery(prompt: string): string {
+    const searchPatterns = [
+        /search for (.+)/i,
+        /find (.+)/i,
+        /what is (.+)/i,
+        /tell me about (.+)/i,
+        /latest (.+)/i,
+        /current (.+)/i,
+        /news about (.+)/i,
+        /who is (.+)/i,
+        /when did (.+)/i,
+        /what happened (.+)/i
+    ];
 
-        const user = useUser();
+    for (const pattern of searchPatterns) {
+        const match = prompt.match(pattern);
+        if (match) {
+            return match[1].trim();
+        }
+    }
 
-        const response = await fetch('https://api.aimlapi.com/v1/images/generations', {
+    return prompt;
+}
+
+// Web search function using Tavily API
+async function performTavilySearch(query: string) {
+    try {
+        const response = await fetch('https://api.tavily.com/search', {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${process.env.AIML_API_KEY}`,
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.TAVILY_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'dall-e-3',
-                prompt: prompt,
-                width: width,
-                height: height,
-                seed: seed,
-                steps: steps,
-            }),
+                query: query,
+                search_depth: "basic",
+                include_answer: true,
+                include_images: false,
+                include_raw_content: false,
+                max_results: 5
+            })
         });
 
-        const result = await response.json();
-        const imageUrl = result?.data?.[0]?.url;
-
-        if (imageUrl) {
-            await supabase.from('media').insert([
-                {
-                    type: 'image',
-                    url: imageUrl,
-                    prompt: prompt,
-                    created_at: new Date().toISOString(),
-                    user_id: user?.user?.id
-                }
-            ]);
-            return {
-                type: 'image',
-                url: imageUrl,
-                alt: prompt
-            };
+        if (!response.ok) {
+            throw new Error('Tavily search failed');
         }
-        throw new Error("No image URL returned from API.");
+
+        const data = await response.json();
+
+        return {
+            query,
+            results: data.results?.map((result: any) => ({
+                title: result.title,
+                url: result.url,
+                content: result.content,
+                score: result.score
+            })) || [],
+            answer: data.answer || null,
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('Tavily search error:', error);
+        return {
+            query,
+            results: [],
+            error: 'Failed to perform Tavily search',
+            timestamp: new Date().toISOString()
+        };
     }
-    else if (type === "video") {
-        // Video Generation block - Use Google Veo3
-        const response = await fetch('https://api.aimlapi.com/v2/generate/video/google/generation', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${process.env.AIML_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'veo2',
-                aspect_ratio: '16:9',
-                duration: 5,
-                prompt: prompt
-            }),
+}
+
+// Alternative web search using SerpAPI
+async function performWebSearch(query: string) {
+    try {
+        const response = await fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${process.env.SERP_API_KEY}&num=5`);
+
+        if (!response.ok) {
+            throw new Error('Search API request failed');
+        }
+
+        const data = await response.json();
+
+        const results = data.organic_results?.slice(0, 3).map((result: any) => ({
+            title: result.title,
+            link: result.link,
+            snippet: result.snippet
+        })) || [];
+
+        return {
+            query,
+            results,
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('Web search error:', error);
+        return {
+            query,
+            results: [],
+            error: 'Failed to perform web search',
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+// Image analysis function
+async function analyzeImage(imageUrl: string, prompt: string = "Describe this image in detail") {
+    try {
+        const api = new OpenAI({
+            apiKey: process.env.AIML_API_KEY!,
+            baseURL: "https://api.aimlapi.com/v1"
         });
 
-        const result = await response.json();
-        const videoUrl = result?.data?.[0]?.url;
-
-        if (videoUrl) {
-            const user = useUser();
-            await supabase.from('media').insert([
+        const response = await api.chat.completions.create({
+            model: "gpt-4-vision-preview",
+            messages: [
                 {
-                    type: 'video',
-                    url: videoUrl,
-                    prompt: prompt,
-                    created_at: new Date().toISOString(),
-                    user_id: user?.user?.id
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: prompt
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: imageUrl,
+                                detail: "high"
+                            }
+                        }
+                    ]
                 }
-            ]);
-            return {
-                type: 'video',
-                url: videoUrl,
-                alt: prompt
-            };
-        }
-        throw new Error("No video URL returned from API.");
-    }
-    else if (type === "audio") {
-        // Audio Generation block - Use ElevenLabs
-        return null;
-    }
-    return null;
-};
+            ],
+            max_tokens: 1000
+        });
 
-export async function POST(req: NextRequest) {
+        return {
+            description: response.choices[0].message.content,
+            imageUrl,
+            timestamp: new Date().toISOString()
+        };
+    } catch (error: any) {
+        console.error('Image analysis error:', error);
+        return {
+            description: "Failed to analyze image",
+            imageUrl,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
         const body = await req.json();
-        const { model, chatContext, file, context, prompt, instructions } = body;
+        const {
+            model,
+            chatContext,
+            file,
+            context,
+            prompt,
+            instructions,
+            imageUrl
+        } = body;
 
         if (!model || !prompt) {
             return NextResponse.json({ error: "Model and prompt are required." }, { status: 400 });
         }
 
+        // Detect commands in the prompt
+        const commands = detectCommands(prompt, imageUrl);
+
         const mainPrompt = {
-            prompt,
+            prompt: commands.cleanPrompt,
             chatContext: chatContext || [],
             file: file || "",
             context: context || "",
             instructions: instructions || ""
         };
 
-        let responseData;
-        let mediaResponse = null;
-        
-        mainPrompt.instructions = mainPrompt.instructions + " .You are SackLM. Whenever you feel like, you should generate an image, use <sack-image-gen prompt='You generate accordingly'>  "
+        mainPrompt.instructions = mainPrompt.instructions + ' You are SackLM, you are an AI assistant chatbot made to help.'
 
+        let responseData: any;
+        let searchResults: any = null;
+        let imageAnalysis: any = null;
+
+        // Perform web search if detected
+        if (commands.hasSearch && commands.searchQuery) {
+            console.log(`🔍 Performing search for: "${commands.searchQuery}"`);
+
+            if (process.env.TAVILY_API_KEY) {
+                searchResults = await performTavilySearch(commands.searchQuery);
+            } else if (process.env.SERP_API_KEY) {
+                searchResults = await performWebSearch(commands.searchQuery);
+            }
+
+            // Add search results to context
+            if (searchResults && searchResults.results.length > 0) {
+                const searchContext = searchResults.results
+                    .map((result: any) => `Title: ${result.title}\nContent: ${result.content || result.snippet}`)
+                    .join('\n\n');
+
+                mainPrompt.context += `\n\nWeb Search Results for "${commands.searchQuery}":\n${searchContext}`;
+            }
+        }
+
+        // Analyze image if detected
+        if (commands.hasImageAnalysis && commands.imageUrl) {
+            console.log(`📸 Analyzing image: ${commands.imageUrl}`);
+            imageAnalysis = await analyzeImage(commands.imageUrl, `Analyze this image in the context of: ${mainPrompt.prompt}`);
+
+            if (imageAnalysis && imageAnalysis.description) {
+                mainPrompt.context += `\n\nImage Analysis:\n${imageAnalysis.description}`;
+            }
+        }
+
+        // Update instructions
+        let enhancedInstructions = mainPrompt.instructions;
+        if (commands.hasSearch || commands.hasImageAnalysis) {
+            enhancedInstructions += " You have access to current web information and can analyze images. " +
+                "Use the provided search results and image analysis to give accurate, up-to-date responses.";
+        }
+
+        // Process different models
         if (model === "gpt-4") {
             const messages: any[] = [];
 
-            if (mainPrompt.instructions) {
+            if (enhancedInstructions) {
                 messages.push({
                     role: "system",
-                    content: mainPrompt.instructions
+                    content: enhancedInstructions
+                });
+            }
+
+            if (mainPrompt.context) {
+                messages.push({
+                    role: "system",
+                    content: `Context: ${mainPrompt.context}`
                 });
             }
 
@@ -171,63 +337,30 @@ export async function POST(req: NextRequest) {
                         {
                             role: 'user',
                             parts: [{
-                                text: `User prompt: ${mainPrompt.prompt} | Instructions: ${mainPrompt.instructions} | Context: ${mainPrompt.context}`
+                                text: `User prompt: ${mainPrompt.prompt} | Instructions: ${enhancedInstructions} | Context: ${mainPrompt.context}`
                             }]
                         }
                     ]
                 })
             });
 
-            responseData = await response.json();
-
-            // //MEDIA GENERATION BLOCK
-            // //Parsing the response text based on the model
-
-            {
-                const mediaCondition = parseSackLang(responseData.candidates?.[0].content.parts?.[0].text);
-
-                if (mediaCondition?.type === "image") {
-                    const imgSettings = {
-                        width: 1024,
-                        height: 1024,
-                        seed: Math.floor(Math.random() * 1000000),
-                        steps: 50
-                    };
-
-                    mediaResponse = await generateMedia(
-                        mediaCondition.prompt, //Prompting for the API KEY, here for the "image" type.
-                        "image", //defining the type of the media
-                        "",
-                        imgSettings, //Image settings object for setting the image.
-                        {} // video settings not needed for image generation
-                    );
-                } else if (mediaCondition?.type === "video") {
-                    //Video generation block.
-                    mediaResponse = await generateMedia(
-                        mediaCondition.prompt, //Prompting for the API KEY, here for the "video" type.
-                        mediaCondition.type, //defining the type of the media
-                        "",
-                        {}, // image settings not needed for video generation
-                        {
-                            model: 'veo2',
-                            aspect_ratio: '16:9',
-                            duration: 5
-                        }, // video settings object for setting the video.
-                    );
-                } else if (mediaCondition?.type === "audio") { //Coming soon.
-                    //Audio generation block.
-                }
-            }
-
-
+            const data = await response.json();
+            responseData = data;
         }
         else if (model === "mistral-7b") {
             const messages: any[] = [];
 
-            if (mainPrompt.instructions) {
+            if (enhancedInstructions) {
                 messages.push({
                     role: "system",
-                    content: mainPrompt.instructions
+                    content: enhancedInstructions
+                });
+            }
+
+            if (mainPrompt.context) {
+                messages.push({
+                    role: "system",
+                    content: `Context: ${mainPrompt.context}`
                 });
             }
 
@@ -255,10 +388,17 @@ export async function POST(req: NextRequest) {
         else if (model === "llama-4-scout") {
             const messages: any[] = [];
 
-            if (mainPrompt.instructions) {
+            if (enhancedInstructions) {
                 messages.push({
                     role: "system",
-                    content: mainPrompt.instructions
+                    content: enhancedInstructions
+                });
+            }
+
+            if (mainPrompt.context) {
+                messages.push({
+                    role: "system",
+                    content: `Context: ${mainPrompt.context}`
                 });
             }
 
@@ -282,14 +422,21 @@ export async function POST(req: NextRequest) {
             responseData = {
                 response: completion.choices[0].message.content
             };
-        } else if (model === "deepseek-v3") {
-
+        }
+        else if (model === "deepseek-v3") {
             const messages: any[] = [];
 
-            if (mainPrompt.instructions) {
+            if (enhancedInstructions) {
                 messages.push({
                     role: "system",
-                    content: mainPrompt.instructions
+                    content: enhancedInstructions
+                });
+            }
+
+            if (mainPrompt.context) {
+                messages.push({
+                    role: "system",
+                    content: `Context: ${mainPrompt.context}`
                 });
             }
 
@@ -313,7 +460,6 @@ export async function POST(req: NextRequest) {
             responseData = {
                 response: completion.choices[0].message.content
             };
-
         }
         else {
             return NextResponse.json({ error: "Unsupported model." }, { status: 400 });
@@ -327,16 +473,33 @@ export async function POST(req: NextRequest) {
             parsedText = responseData.response;
         }
 
-        console.log(parsedText);
-        console.log("mediaRes: ", mediaResponse);
+        console.log("✅ Response generated successfully");
+        console.log("🔍 Search executed:", commands.hasSearch);
+        console.log("📸 Image analyzed:", commands.hasImageAnalysis);
 
         return NextResponse.json({
             text: parsedText,
-            media: mediaResponse
+            searchResults: searchResults,
+            imageAnalysis: imageAnalysis,
+            commands: {
+                detectedSearch: commands.hasSearch,
+                detectedImage: commands.hasImageAnalysis,
+                searchQuery: commands.searchQuery,
+                cleanPrompt: commands.cleanPrompt
+            },
+            metadata: {
+                model,
+                hasWebSearch: !!searchResults,
+                hasImageAnalysis: !!imageAnalysis,
+                timestamp: new Date().toISOString()
+            }
         });
 
-    } catch (error) {
-        console.error("API Error:", error);
-        return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    } catch (error: any) {
+        console.error("❌ API Error:", error);
+        return NextResponse.json({
+            error: "Internal server error.",
+            details: error.message
+        }, { status: 500 });
     }
 }
