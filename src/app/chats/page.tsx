@@ -37,6 +37,9 @@ const ChatPage = () => {
     // Add these state variables to your component
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+    const [chatToRename, setChatToRename] = useState<{ id: string, title: string } | null>(null);
+    const [newChatTitle, setNewChatTitle] = useState("");
 
 
     const fetchModels = async () => {
@@ -528,6 +531,35 @@ const ChatPage = () => {
         setIsSaveDialogOpen(true);
     }
 
+    const renameChat = async (chatId: string, newTitle: string) => {
+        if (!user || !newTitle.trim()) return;
+
+        try {
+            const { error } = await supabase
+                .from('chats')
+                .update({ title: newTitle })
+                .eq('id', chatId)
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            // Update local state
+            setChatHistory(prev => prev.map(chat =>
+                chat.id === chatId
+                    ? { ...chat, title: newTitle }
+                    : chat
+            ));
+
+            toast.success("Chat renamed successfully");
+            setIsRenameDialogOpen(false);
+            setChatToRename(null);
+            setNewChatTitle("");
+        } catch (error) {
+            console.error('Error renaming chat:', error);
+            toast.error("Failed to rename chat");
+        }
+    };
+
     return (
         <SidebarProvider className="w-full flex overflow-scroll">
             <ToastContainer position="bottom-right" delay={1000}></ToastContainer>
@@ -561,16 +593,28 @@ const ChatPage = () => {
                                 <div
                                     key={chat.id}
                                     onClick={() => loadChat(chat.id)}
-                                    className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''
-                                        }`}
+                                    className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''}`}
                                 >
                                     <p className="truncate text-sm">{chat.title}</p>
-                                    <button
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded-full z-10"
-                                        onClick={(e) => deleteChat(chat.id, e)}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    <div className="opacity-0 group-hover:opacity-100 flex gap-1 z-10">
+                                        <button
+                                            className="p-1 hover:bg-gray-200 rounded-full"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setChatToRename({ id: chat.id, title: chat.title });
+                                                setNewChatTitle(chat.title);
+                                                setIsRenameDialogOpen(true);
+                                            }}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button
+                                            className="p-1 hover:bg-gray-200 rounded-full"
+                                            onClick={(e) => deleteChat(chat.id, e)}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })
@@ -722,8 +766,8 @@ const ChatPage = () => {
 
                         {/* Command Helper */}
                         {prompt.includes('/') && (
-                            <div className="mb-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
-                                💡 Commands: <code>/search query</code> for web search, <code>/image</code> for image analysis
+                            <div className="mb-2 text-lg bg-gray-50 p-2 rounded-lg">
+                                💡<span className="bg-gradient-to-r from-blue-700 to-orange-700 bg-clip-text text-transparent">use <code>/search query</code> for web search</span>
                             </div>
                         )}
 
@@ -752,7 +796,7 @@ const ChatPage = () => {
 
                             {/* Image Upload Button */}
                             <div className="flex flex-col gap-2">
-                                <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0">
+                                {/* <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -761,11 +805,11 @@ const ChatPage = () => {
                                         disabled={loadingResponse || !user}
                                     />
                                     <Image size={18} />
-                                </label>
+                                </label> */}
 
                                 {/* Send Button */}
                                 <button
-                                    className={`bg-black text-white rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user)
+                                    className={`bg-black text-white rounded-lg p-5 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user)
                                         ? 'opacity-50 cursor-not-allowed'
                                         : ''
                                         }`}
@@ -807,7 +851,7 @@ const ChatPage = () => {
 
                             {/* Search indicator */}
                             {prompt.toLowerCase().includes('/search') && (
-                                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <div className="flex items-center gap-1 rounded-full text-xs text-blue-600 bg-blue-50 px-3 py-1">
                                     <Search size={12} />
                                     Web Search
                                 </div>
@@ -857,6 +901,49 @@ const ChatPage = () => {
                             disabled={!documentTitle.trim()}
                         >
                             Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Rename Chat</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <label htmlFor="chatTitle" className="text-sm font-medium">
+                                Chat Title
+                            </label>
+                            <Input
+                                id="chatTitle"
+                                value={newChatTitle}
+                                onChange={(e) => setNewChatTitle(e.target.value)}
+                                placeholder="Enter new chat title"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsRenameDialogOpen(false);
+                                setChatToRename(null);
+                                setNewChatTitle("");
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (chatToRename) {
+                                    renameChat(chatToRename.id, newChatTitle);
+                                }
+                            }}
+                            disabled={!newChatTitle.trim()}
+                        >
+                            Rename
                         </Button>
                     </DialogFooter>
                 </DialogContent>

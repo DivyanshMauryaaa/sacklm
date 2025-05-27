@@ -102,16 +102,6 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href={"/image"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <ImagesIcon size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Image</p>
-            </div>
-          </Link>
-
           <Link href={"/workflows"}>
             <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
               <Workflow size={32} className="mt-3" />
@@ -122,31 +112,9 @@ export default function Home() {
             </div>
           </Link>
 
-
-          {/* <Link href={"/organize"}>
-
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
-              <Folder size={32} className="mt-3" />
-
-              <div className="h-[70px]"></div>
-
-              <p className="font-bold text-2xl mb-3">Organize</p>
-            </div>
-          </Link> */}
-
         </div>
 
         <br />
-
-        {/* <div className="flex gap-2">
-          <Link href="/community">
-            <p className="text-gray-600 hover:underline">Community</p>
-          </Link>
-
-          <Link href={"/devapi"}>
-            <p className="text-gray-600 hover:underline">API</p>
-          </Link>
-        </div> */}
 
       </div>
 

@@ -59,71 +59,134 @@ export default function Home() {
                     <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
                         Powerful Features
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
-                            <Workflow className="h-12 w-12  mb-4" />
-                            <h3 className="text-xl font-semibold mb-2">AI Workflows</h3>
-                            <p className="text-gray-600">
-                                Create custom workflows with multiple AI agents working together.
-                            </p>
+                    <div className="">
+                        <div className="p-6 flex jusitfy-center gap-5 transition-all duration-150">
+                            <div>
+
+                                <Workflow className="h-12 w-12  mb-4" />
+                                <h3 className="text-5xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-700 to-orange-700">AI Workflows</h3>
+                                <p className="text-gray-600">
+                                    Create custom workflows with multiple AI agents working together.
+                                </p>
+
+                            </div>
+
+                            <br />
+
+                            <center>
+
+                                <Image
+                                    src={'/workflows.png'}
+                                    width={1000}
+                                    height={400}
+                                    alt=""
+                                    className="rounded-lg border border-gray-300"
+                                />
+
+                            </center>
+                            <br />
                         </div>
-                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
-                            <Brain className="h-12 w-12  mb-4" />
-                            <h3 className="text-xl font-semibold mb-2">Multiple Models</h3>
-                            <p className="text-gray-600">
-                                Choose from various AI models including Gemini, GPT-4, and more.
-                            </p>
+                        <div className="flex justify-center gap-2 p-6 transition-all duration-150">
+                            <div>
+                                <Brain className="h-12 w-12 mb-4" />
+                                <h3 className="text-5xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-700 to-orange-700">Multiple Models</h3>
+                                <p className="text-gray-600">
+                                    Choose from various AI models including Gemini, GPT-4, and more.
+                                </p>
+
+                                <br />
+
+                                <div className="flex gap-3">
+
+                                    <Image
+                                        src={'/icons/gpt.png'}
+                                        width={40}
+                                        height={40}
+                                        alt="OpenAI GPT Models"
+                                    />
+
+                                    <Image
+                                        src={'/icons/gemini.png'}
+                                        width={40}
+                                        height={40}
+                                        alt="Google Gemini"
+                                    />
+
+                                    <Image
+                                        src={'/icons/mistral-icon.png'}
+                                        width={40}
+                                        height={40}
+                                        alt="Mistral Icon"
+                                    />
+
+                                    <Image
+                                        src={'/icons/deepseek.png'}
+                                        width={40}
+                                        height={40}
+                                        alt="Mistral Icon"
+                                    />
+
+                                    <Image
+                                        src={'/icons/LLaMA.webp'}
+                                        width={40}
+                                        height={40}
+                                        alt="Mistral Icon"
+                                    />
+
+                                </div>
+                            </div>
+
+                            <br />
+
+                            <div>
+
+                                <center>
+
+                                    <Image
+                                        src={'/demos/chat-demo.png'}
+                                        width={500}
+                                        height={200}
+                                        alt=""
+                                        className="rounded-lg border border-gray-300"
+                                    />
+
+                                </center>
+
+                            </div>
+
                         </div>
-                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
-                            <FileText className="h-12 w-12  mb-4" />
-                            <h3 className="text-xl font-semibold mb-2">Document Management</h3>
-                            <p className="text-gray-600">
-                                Easily save your AI responses with one click and use them later whenever you want from within the app.
-                            </p>
+
+                        <div className="grid grid-cols-3 gap-4">
+
+                            <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                                <FileText className="h-12 w-12  mb-4" />
+                                <h3 className="text-xl font-semibold mb-2">Document Management</h3>
+                                <p className="text-gray-600">
+                                    Easily save your AI responses with one click and use them later whenever you want from within the app.
+                                </p>
+                            </div>
+                            <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                                <MessageSquare className="h-12 w-12  mb-4" />
+                                <h3 className="text-xl font-semibold mb-2">Smart Context</h3>
+                                <p className="text-gray-600">
+                                    Intelligent context handling between agents for better results.
+                                </p>
+                            </div>
+                            <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                                <MousePointerClick className="h-12 w-12  mb-4" />
+                                <h3 className="text-xl font-semibold mb-2">Multiple Purpose Models</h3>
+                                <p className="text-gray-600">
+                                    Multiple purpose agents like video generation, image generation, text generation working together to give result.
+                                </p>
+                            </div>
+
                         </div>
-                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
-                            <MessageSquare className="h-12 w-12  mb-4" />
-                            <h3 className="text-xl font-semibold mb-2">Smart Context</h3>
-                            <p className="text-gray-600">
-                                Intelligent context handling between agents for better results.
-                            </p>
-                        </div>
-                        <div className="hover:ring-2 hover:ring-blue-600 p-6 rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
-                            <MousePointerClick className="h-12 w-12  mb-4" />
-                            <h3 className="text-xl font-semibold mb-2">Multiple Purpose Models</h3>
-                            <p className="text-gray-600">
-                                Multiple purpose agents like video generation, image generation, text generation working together to give result.
-                            </p>
-                        </div>
+
                     </div>
                 </div>
             </div>
 
-            <div className="bg-gray-50 py-16 px-5">
-                <div className="m-auto">
-                    <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-                        AI Workflows
-                    </h2>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <Image
-                            src="/workflows.png"
-                            width={1000}
-                            height={450}
-                            alt="AI Workflow"
-                            className="rounded-lg ring-2 ring-gray-300 user-select-none"
-                        />
-                        <Image
-                            src="/workflow-demo.png"
-                            width={1000}
-                            height={450}
-                            alt="AI Workflow"
-                            className="rounded-lg ring-2 ring-gray-300 user-select-none"
-                        />
-                    </div>
-
-                </div>
-            </div>
 
             {/* CTA Section */}
             <div className="container mx-auto px-6 py-16">
