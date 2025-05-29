@@ -1,10 +1,9 @@
 'use client'
 
 import { ChatSidebar, SidebarContent, SidebarHeader, SidebarProvider } from "@/components/ui/sidebar";
-import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box, Code, Pencil, Plane } from "lucide-react";
+import { SendHorizonal, Sparkle, PlusCircle, Trash2, Save, Sparkles, Copy, Box, Code, Pencil, Plane, Image as ImageIcon, Search, X, BoxIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import Markdown from "react-markdown";
-// import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import { useUser } from "@clerk/nextjs";
 import { ToastContainer, toast } from 'react-toast';
 import { supabase } from "@/lib/supabase";
@@ -18,13 +17,34 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Image, Search, X } from 'lucide-react';
+
+// Types for better type safety
+type ChatMessage = {
+    role: string;
+    content: string;
+    imageUrl?: string;
+    timestamp?: string;
+    searchResults?: any;
+    imageAnalysis?: any;
+    imageGeneration?: any;
+    videoGeneration?: any;
+    commands?: any;
+    metadata?: any;
+    error?: boolean;
+    errorType?: string;
+};
+
+type ChatHistoryItem = {
+    id: string;
+    title: string;
+    messages: ChatMessage[];
+};
 
 const ChatPage = () => {
-    const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [prompt, setPrompt] = useState("");
     const [loadingResponse, setLoadingResponse] = useState(false);
-    const [chatHistory, setChatHistory] = useState<Array<{ id: string, title: string, messages: Array<{ role: string, content: string }> }>>([]);
+    const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const { user } = useUser();
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,17 +54,18 @@ const ChatPage = () => {
     const [modelInstruction, setModelInstruction] = useState('');
     const [userModels, setUserModels] = useState<any>([]);
     const [model, setModel] = useState('gemini-2.0-flash');
-    // Add these state variables to your component
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
     const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
     const [chatToRename, setChatToRename] = useState<{ id: string, title: string } | null>(null);
     const [newChatTitle, setNewChatTitle] = useState("");
-
+    const [detectedCommands, setDetectedCommands] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    // Alternative using ReturnType of setTimeout
+    const autoSaveTimeoutRef = useRef<number | null>(null);
+    const [selectedUserModel, setSelectedUserModel] = useState('');
 
     const fetchModels = async () => {
         const { data, error } = await supabase.from('models').select('*').eq('user_id', user?.id);
-
         if (error) console.error(error.message);
         if (!error) setUserModels(data);
     }
@@ -57,6 +78,16 @@ const ChatPage = () => {
         }
     }, [user]);
 
+    // Command detection
+    useEffect(() => {
+        const commands = [];
+        if (prompt.includes('/search')) commands.push('🔍 Search');
+        if (prompt.includes('/generate-image')) commands.push('🎨 Image Generation');
+        if (prompt.includes('/generate-video')) commands.push('🎬 Video Generation');
+        if (prompt.includes('/analyze-image')) commands.push('📸 Image Analysis');
+        setDetectedCommands(commands);
+    }, [prompt]);
+
     const fetchChatHistory = async () => {
         if (!user) return;
 
@@ -67,29 +98,18 @@ const ChatPage = () => {
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
             if (data) {
-                const formattedChats = data.map(chat => {
-                    // Ensure we're properly extracting the messages array
-                    const messages = chat.content && Array.isArray(chat.content.messages)
-                        ? chat.content.messages
-                        : [];
-
-                    return {
-                        id: chat.id,
-                        title: chat.title,
-                        messages: messages
-                    };
-                });
-
+                const formattedChats = data.map(chat => ({
+                    id: chat.id,
+                    title: chat.title,
+                    messages: chat.content?.messages || []
+                }));
                 setChatHistory(formattedChats);
             }
         } catch (error) {
             console.error('Error fetching chat history:', error);
-            console.error('Error details:', JSON.stringify(error));
         }
     };
 
@@ -103,13 +123,12 @@ const ChatPage = () => {
     };
 
     const startNewChat = () => {
-        // Save current chat if it has messages
         if (chatMessages.length > 0) {
             saveCurrentChat();
         }
-
         setActiveChatId(null);
         setChatMessages([]);
+        setUploadedImageUrl(null);
     };
 
     const saveCurrentChat = async () => {
@@ -121,45 +140,35 @@ const ChatPage = () => {
 
         try {
             if (activeChatId) {
-                // Update existing chat
                 const { error } = await supabase
                     .from('chats')
                     .update({
                         title,
-                        content: { messages: chatMessages }  // Ensure proper structure
+                        content: { messages: chatMessages }
                     })
                     .eq('id', activeChatId)
                     .eq('user_id', user.id);
 
-                if (error) {
-                    console.error('Update error:', error);
-                    throw error;
-                }
+                if (error) throw error;
 
-                // Update local state
                 setChatHistory(prev => prev.map(chat =>
                     chat.id === activeChatId
                         ? { ...chat, messages: chatMessages, title }
                         : chat
                 ));
             } else {
-                // Create new chat
                 const { data, error } = await supabase
                     .from('chats')
                     .insert({
                         user_id: user.id,
                         title,
-                        content: { messages: chatMessages }  // Ensure proper structure
+                        content: { messages: chatMessages }
                     })
                     .select('id')
                     .single();
 
-                if (error) {
-                    console.error('Insert error:', error);
-                    throw error;
-                }
+                if (error) throw error;
 
-                // Update local state with the new chat
                 const newChatId = data.id;
                 setChatHistory(prev => [{ id: newChatId, title, messages: chatMessages }, ...prev]);
                 setActiveChatId(newChatId);
@@ -170,20 +179,17 @@ const ChatPage = () => {
     };
 
     const loadChat = async (chatId: string) => {
-        // Save current chat before switching
         if (chatMessages.length > 0 && activeChatId !== chatId) {
             await saveCurrentChat();
         }
 
-        // First check local state
         const chat = chatHistory.find(c => c.id === chatId);
-        if (chat && chat.messages && chat.messages.length > 0) {
+        if (chat && chat.messages.length > 0) {
             setChatMessages(chat.messages);
             setActiveChatId(chatId);
             return;
         }
 
-        // If not in local state or messages are empty, fetch directly from Supabase
         try {
             const { data, error } = await supabase
                 .from('chats')
@@ -194,11 +200,9 @@ const ChatPage = () => {
 
             if (error) throw error;
 
-            if (data && data.content && data.content.messages) {
+            if (data?.content?.messages) {
                 setChatMessages(data.content.messages);
                 setActiveChatId(chatId);
-
-                // Also update the chat history
                 setChatHistory(prev =>
                     prev.map(c => c.id === chatId
                         ? { ...c, messages: data.content.messages }
@@ -212,10 +216,7 @@ const ChatPage = () => {
     };
 
     const deleteChat = async (chatId: string, e: React.MouseEvent) => {
-        // Prevent the click event from bubbling up to parent elements
-        // This ensures the chat deletion doesn't trigger the chat selection
         e.stopPropagation();
-
         if (!user) return;
 
         try {
@@ -227,7 +228,6 @@ const ChatPage = () => {
 
             if (error) throw error;
 
-            // Update local state
             setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
 
             if (activeChatId === chatId) {
@@ -239,33 +239,60 @@ const ChatPage = () => {
         }
     };
 
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('Image size should be less than 10MB');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            setUploadedImageUrl(data.url);
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            toast.error('Failed to upload image');
+        }
+    };
+
+    const clearImage = () => {
+        setUploadedImageUrl(null);
+    };
+
     const handleSubmitPrompt = async (userPrompt: string, imageUrl?: string) => {
         if (!userPrompt.trim()) return;
 
         setLoadingResponse(true);
 
-        // Add the user prompt to the chat history
-        const updatedMessages = [
-            ...chatMessages,
-            {
-                role: 'user',
-                content: userPrompt,
-                imageUrl: imageUrl || undefined,
-                timestamp: new Date().toISOString()
-            }
-        ];
+        const userMessage: ChatMessage = {
+            role: 'user',
+            content: userPrompt,
+            imageUrl: imageUrl || undefined,
+            timestamp: new Date().toISOString()
+        };
+
+        const updatedMessages = [...chatMessages, userMessage];
         setChatMessages(updatedMessages);
 
         try {
-            // Create a context from previous messages (last few exchanges)
             const conversationContext = chatMessages
-                .slice(-5)
-                .map(msg => msg.content)
-                .join("\n\n");
+                .slice(-6)
+                .map(msg => `${msg.role}: ${msg.content}`)
+                .join("\n");
 
             const instructions = modelInstruction || "";
 
-            // Call your enhanced Next.js API route
+            const requestStart = Date.now();
             const res = await fetch("/api/generate", {
                 method: "POST",
                 headers: {
@@ -273,68 +300,87 @@ const ChatPage = () => {
                 },
                 body: JSON.stringify({
                     model,
-                    prompt: userPrompt, // Send clean prompt, let API handle context
-                    chatContext: chatMessages.slice(-10), // Send more context but limit to last 10 messages
+                    prompt: userPrompt,
+                    chatContext: chatMessages.slice(-8),
                     context: conversationContext,
                     file: null,
                     instructions,
-                    imageUrl: imageUrl || undefined, // Pass image URL if provided
-                    enableWebSearch: userPrompt.toLowerCase().includes('/search') || undefined // Optional explicit enable
+                    imageUrl: imageUrl || undefined,
+                    enableWebSearch: userPrompt.toLowerCase().includes('/search') || undefined
                 }),
             });
 
             if (!res.ok) {
-                throw new Error(`API request failed: ${res.status}`);
+                throw new Error(`API request failed: ${res.status} ${res.statusText}`);
             }
 
             const data = await res.json();
+            const requestTime = Date.now() - requestStart;
+
+            console.log(`⚡ API Response time: ${requestTime}ms`);
 
             let content = "No response received.";
-            let searchResults = null;
-            let imageAnalysis = null;
-            let commandsUsed = null;
-
-            // Extract response based on your API structure
             if (data?.text) {
                 content = data.text;
             } else if (model === "gemini-2.0-flash" && data?.response?.candidates?.[0]?.content?.parts?.[0]?.text) {
                 content = data.response.candidates[0].content.parts[0].text;
             }
 
-            // Extract additional data from enhanced API
-            searchResults = data?.searchResults || null;
-            imageAnalysis = data?.imageAnalysis || null;
-            commandsUsed = data?.commands || null;
-
-            // Create enhanced message object
-            const assistantMessage = {
-                role: "model",
-                content,
+            const {
                 searchResults,
                 imageAnalysis,
-                commandsUsed,
-                timestamp: new Date().toISOString(),
-                metadata: data?.metadata || null
+                imageGeneration,
+                videoGeneration,
+                commands,
+                metadata
+            } = data;
+
+            const assistantMessage: ChatMessage = {
+                role: "model",
+                content,
+                searchResults: searchResults || null,
+                imageAnalysis: imageAnalysis || null,
+                imageGeneration: imageGeneration || null,
+                videoGeneration: videoGeneration || null,
+                commands: commands || null,
+                metadata: {
+                    ...metadata,
+                    clientProcessingTime: requestTime
+                },
+                timestamp: new Date().toISOString()
             };
 
-            const finalMessages = [
-                ...updatedMessages,
-                assistantMessage
-            ];
-
+            const finalMessages = [...updatedMessages, assistantMessage];
             setChatMessages(finalMessages);
 
-            // Log enhanced features usage
             if (searchResults?.results?.length > 0) {
                 console.log(`🔍 Web search executed: "${searchResults.query}" - ${searchResults.results.length} results`);
             }
             if (imageAnalysis?.description) {
                 console.log(`📸 Image analyzed: ${imageUrl}`);
             }
+            if (imageGeneration?.imageUrl) {
+                console.log(`🎨 Image generated: ${imageGeneration.prompt}`);
+                preloadImage(imageGeneration.imageUrl);
+            }
+            if (videoGeneration?.videoUrl) {
+                console.log(`🎬 Video generated: ${videoGeneration.prompt}`);
+                preloadVideo(videoGeneration.videoUrl);
+            }
 
-            // Auto-save chat to Supabase with enhanced data
             if (user) {
-                setTimeout(async () => {
+                // Clear existing timeout properly
+                if (autoSaveTimeoutRef.current) {
+                    clearTimeout(autoSaveTimeoutRef.current);
+                }
+
+                // Set new timeout with window.setTimeout which returns number
+                autoSaveTimeoutRef.current = window.setTimeout(async () => {
+                    const titlePrompt = commands?.cleanPrompt || userPrompt;
+                    const title = titlePrompt.length > 30
+                        ? titlePrompt.slice(0, 30) + "..."
+                        : titlePrompt;
+
                     if (activeChatId) {
                         const { error } = await supabase
                             .from('chats')
@@ -345,9 +391,7 @@ const ChatPage = () => {
                             .eq('id', activeChatId)
                             .eq('user_id', user.id);
 
-                        if (error) {
-                            console.error('Auto-save update error:', error);
-                        } else {
+                        if (!error) {
                             setChatHistory(prev => prev.map(chat =>
                                 chat.id === activeChatId
                                     ? { ...chat, messages: finalMessages }
@@ -355,12 +399,6 @@ const ChatPage = () => {
                             ));
                         }
                     } else {
-                        // Generate title from clean prompt if commands were used
-                        const titlePrompt = commandsUsed?.cleanPrompt || userPrompt;
-                        const title = titlePrompt.length > 30
-                            ? titlePrompt.slice(0, 30) + "..."
-                            : titlePrompt;
-
                         const { data: insertData, error } = await supabase
                             .from('chats')
                             .insert({
@@ -373,31 +411,37 @@ const ChatPage = () => {
                             .select('id')
                             .single();
 
-                        if (error) {
-                            console.error('Auto-save insert error:', error);
-                        } else if (insertData) {
+                        if (!error && insertData) {
                             const newChatId = insertData.id;
                             setChatHistory(prev => [
                                 { id: newChatId, title, messages: finalMessages },
-                                ...prev
+                                ...prev.slice(0, 49)
                             ]);
                             setActiveChatId(newChatId);
                         }
                     }
-                }, 500);
+                }, 1000) as unknown as number; // Type assertion if needed
             }
 
         } catch (error) {
             console.error("Error fetching response:", error);
 
-            // Enhanced error message with more context
             let errorMessage = "Sorry, I encountered an error while processing your request.";
+            let errorType = "generic";
 
             if (error instanceof Error) {
-                if (error.message.includes('API request failed')) {
-                    errorMessage = "The AI service is currently unavailable. Please try again in a moment.";
-                } else if (error.message.includes('network')) {
+                if (error.message.includes('API request failed: 429')) {
+                    errorMessage = "I'm currently busy. Please wait a moment and try again.";
+                    errorType = "rate_limit";
+                } else if (error.message.includes('API request failed: 5')) {
+                    errorMessage = "The AI service is temporarily unavailable. Please try again in a moment.";
+                    errorType = "server_error";
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
                     errorMessage = "Network error. Please check your connection and try again.";
+                    errorType = "network_error";
+                } else if (error.message.includes('timeout')) {
+                    errorMessage = "Request timed out. Please try again with a simpler prompt.";
+                    errorType = "timeout";
                 }
             }
 
@@ -407,105 +451,96 @@ const ChatPage = () => {
                     role: "model",
                     content: errorMessage,
                     error: true,
+                    errorType,
                     timestamp: new Date().toISOString()
                 }
             ]);
         } finally {
             setLoadingResponse(false);
             setPrompt("");
+            setUploadedImageUrl(null);
         }
     };
 
-    // Enhanced submit handler for image uploads
-    const handleSubmitWithImage = async (userPrompt: string, imageFile?: File) => {
-        let imageUrl: string | undefined;
-
-        if (imageFile) {
-            try {
-                // Upload image to your preferred storage (Supabase, Cloudinary, etc.)
-                const formData = new FormData();
-                formData.append('file', imageFile);
-
-                const uploadRes = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    imageUrl = uploadData.url;
-                } else {
-                    console.error('Image upload failed');
-                    // You might want to show an error toast here
-                }
-            } catch (error) {
-                console.error('Image upload error:', error);
-            }
-        }
-
-        await handleSubmitPrompt(userPrompt, imageUrl);
+    const preloadImage = (imageUrl: string) => {
+        const img = new Image();
+        img.onload = () => console.log(`✅ Image preloaded: ${imageUrl}`);
+        img.onerror = () => console.warn(`❌ Failed to preload image: ${imageUrl}`);
+        img.src = imageUrl;
     };
 
-    // Helper function to detect if message has enhanced features
-    const hasEnhancedFeatures = (message: any) => {
-        return message.searchResults?.results?.length > 0 ||
-            message.imageAnalysis?.description ||
-            message.commandsUsed?.detectedSearch ||
-            message.commandsUsed?.detectedImage;
+    const preloadVideo = (videoUrl: string) => {
+        const video = document.createElement('video');
+        video.onloadeddata = () => console.log(`✅ Video preloaded: ${videoUrl}`);
+        video.onerror = () => console.warn(`❌ Failed to preload video: ${videoUrl}`);
+        video.src = videoUrl;
+        video.preload = 'metadata';
     };
 
-    // Helper function to format message with enhanced features for display
-    const formatMessageContent = (message: any) => {
-        let content = message.content;
+    const downloadMedia = async (url: string, type: 'image' | 'video') => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
 
-        // Add search results indicator
-        if (message.searchResults?.results?.length > 0) {
-            content = `🔍 Web search performed for: "${message.searchResults.query}"\n\n${content}`;
-        }
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `generated-${type}-${Date.now()}.${type === 'image' ? 'png' : 'mp4'}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-        // Add image analysis indicator  
-        if (message.imageAnalysis?.description) {
-            content = `📸 Image analyzed\n\n${content}`;
-        }
+            window.URL.revokeObjectURL(downloadUrl);
 
-        return content;
-    };
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('Image size should be less than 10MB');
-                return;
-            }
-
-            setSelectedImage(file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setImagePreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
+            toast.success(`${type} downloaded successfully`);
+        } catch (error) {
+            console.error(`❌ Failed to download ${type}:`, error);
+            toast.error(`Failed to download ${type}. Please try again.`);
         }
     };
 
-    // Clear image
-    const clearImage = () => {
-        setSelectedImage(null);
-        setImagePreview(null);
+    const formatTimestamp = (timestamp: string) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        return date.toLocaleDateString();
     };
 
-    // Enhanced submit handler
+    const commandSuggestions = [
+        {
+            command: '/search',
+            description: 'Search the web for current information',
+            example: '/search latest AI news',
+            icon: '🔍'
+        },
+        {
+            command: '/generate-image',
+            description: 'Create an image using AI',
+            example: '/generate-image sunset over mountains',
+            icon: '🎨'
+        },
+        {
+            command: '/generate-video',
+            description: 'Create a short video using AI',
+            example: '/generate-video waves crashing on beach',
+            icon: '🎬'
+        },
+        {
+            command: '/analyze-image',
+            description: 'Analyze an uploaded image',
+            example: '/analyze-image what do you see?',
+            icon: '📸'
+        }
+    ];
+
     const handleEnhancedSubmit = async () => {
         if (!prompt.trim()) return;
-
-        if (selectedImage) {
-            await handleSubmitWithImage(prompt, selectedImage);
-            clearImage();
-        } else {
-            await handleSubmitPrompt(prompt);
-        }
+        await handleSubmitPrompt(prompt, uploadedImageUrl || undefined);
     };
-
 
     const saveDocument = async (title: string, content: string) => {
         const { error } = await supabase.from('documents').insert([
@@ -514,7 +549,7 @@ const ChatPage = () => {
                 content: content,
                 user_id: user?.id
             }
-        ])
+        ]);
 
         if (!error) {
             toast.success("New document Saved Successfully");
@@ -524,12 +559,12 @@ const ChatPage = () => {
         } else {
             toast.error(error.message);
         }
-    }
+    };
 
     const handleSaveClick = (content: string) => {
         setDocumentToSave({ title: "", content });
         setIsSaveDialogOpen(true);
-    }
+    };
 
     const renameChat = async (chatId: string, newTitle: string) => {
         if (!user || !newTitle.trim()) return;
@@ -543,7 +578,6 @@ const ChatPage = () => {
 
             if (error) throw error;
 
-            // Update local state
             setChatHistory(prev => prev.map(chat =>
                 chat.id === chatId
                     ? { ...chat, title: newTitle }
@@ -558,6 +592,170 @@ const ChatPage = () => {
             console.error('Error renaming chat:', error);
             toast.error("Failed to rename chat");
         }
+    };
+
+    const MessageRenderer = ({ message }: { message: ChatMessage }) => {
+        const {
+            role,
+            content,
+            imageUrl,
+            searchResults,
+            imageAnalysis,
+            imageGeneration,
+            videoGeneration,
+            commands,
+            error,
+            timestamp
+        } = message;
+
+        return (
+            <div className={`p-3 my-3 rounded-lg flex gap-3 ${role === "user"
+                ? 'bg-black ml-auto max-w-md border text-white'
+                : 'text-gray-800 max-w-5xl right-2'
+                }`}>
+                <div className="flex-grow prose prose-sm max-w-none">
+                    {role === "model" ? (
+                        <div>
+                            <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll p-3 rounded">
+                                <ReactMarkdown>{content}</ReactMarkdown>
+                            </div>
+                            {/* User uploaded image */}
+                            {imageUrl && (
+                                <div className="uploaded-image mt-2">
+                                    <img src={imageUrl} alt="User upload" className="max-w-md rounded-lg" />
+                                </div>
+                            )}
+
+                            {/* Generated image */}
+                            {imageGeneration?.imageUrl && (
+                                <div className="generated-media mt-4">
+                                    <div className="media-header flex items-center gap-2 text-sm mb-2">
+                                        <span className="media-type">🎨 Generated Image</span>
+                                        <span className="media-prompt text-gray-600">"{imageGeneration.prompt}"</span>
+                                    </div>
+                                    <img
+                                        src={imageGeneration.imageUrl}
+                                        alt={imageGeneration.prompt}
+                                        className="max-w-md rounded-lg shadow-lg"
+                                        loading="lazy"
+                                    />
+                                    <div className="media-actions mt-2">
+                                        <button
+                                            onClick={() => downloadMedia(imageGeneration.imageUrl, 'image')}
+                                            className="download-btn text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded"
+                                        >
+                                            Download Image
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Generated video */}
+                            {videoGeneration?.videoUrl && (
+                                <div className="generated-media mt-4">
+                                    <div className="media-header flex items-center gap-2 text-sm mb-2">
+                                        <span className="media-type">🎬 Generated Video</span>
+                                        <span className="media-prompt text-gray-600">"{videoGeneration.prompt}"</span>
+                                    </div>
+                                    <video
+                                        src={videoGeneration.videoUrl}
+                                        controls
+                                        className="max-w-md rounded-lg shadow-lg"
+                                        preload="metadata"
+                                    />
+                                    <div className="media-actions mt-2">
+                                        <button
+                                            onClick={() => downloadMedia(videoGeneration.videoUrl, 'video')}
+                                            className="download-btn text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded"
+                                        >
+                                            Download Video
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Image analysis results */}
+                            {imageAnalysis?.description && (
+                                <div className="analysis-results mt-4 bg-gray-50 p-3 rounded">
+                                    <div className="analysis-header flex items-center gap-2 text-sm mb-2">
+                                        <span className="analysis-type">📸 Image Analysis</span>
+                                    </div>
+                                    <div className="analysis-content text-sm">
+                                        {imageAnalysis.description}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Search results */}
+                            {searchResults?.results?.length > 0 && (
+                                <div className="search-results mt-4">
+                                    <div className="search-header flex items-center gap-2 text-sm mb-2">
+                                        <span className="search-type">🔍 Web Search</span>
+                                        <span className="search-query text-gray-600">"{searchResults.query}"</span>
+                                    </div>
+                                    <div className="search-items space-y-2">
+                                        {searchResults.results.slice(0, 3).map((result: any, index: number) => (
+                                            <div key={index} className="search-item bg-gray-50 p-2 rounded">
+                                                <a
+                                                    href={result.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="search-title text-blue-600 hover:underline block"
+                                                >
+                                                    {result.title}
+                                                </a>
+                                                <p className="search-snippet text-sm text-gray-600">{result.content}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Commands used indicator */}
+                            {commands && (
+                                <div className="commands-indicator mt-2">
+                                    <div className="commands-used flex gap-2">
+                                        {commands.detectedSearch && <span className="command-badge text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">🔍 Search</span>}
+                                        {commands.detectedImageAnalysis && <span className="command-badge text-xs bg-green-100 text-green-800 px-2 py-1 rounded">📸 Analysis</span>}
+                                        {commands.detectedImageGeneration && <span className="command-badge text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">🎨 Image Gen</span>}
+                                        {commands.detectedVideoGeneration && <span className="command-badge text-xs bg-red-100 text-red-800 px-2 py-1 rounded">🎬 Video Gen</span>}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Message metadata */}
+                            <div className="message-meta flex justify-between items-center mt-2 text-xs text-gray-500">
+                                <span className="timestamp">{timestamp && formatTimestamp(timestamp)}</span>
+                                {message.metadata?.clientProcessingTime && (
+                                    <span className="processing-time">
+                                        {message.metadata.clientProcessingTime}ms
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 mt-2">
+                                <Copy size={18} className="cursor-pointer hover:text-blue-600" onClick={() => {
+                                    navigator.clipboard.writeText(content);
+                                    toast.success("Copied Successfully!")
+                                }} />
+                                <Save size={18} className="cursor-pointer hover:text-blue-600" onClick={() => {
+                                    handleSaveClick(content)
+                                }} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            {content}
+                            {imageUrl && (
+                                <div className="mt-2">
+                                    <img src={imageUrl} alt="User upload" className="max-w-xs rounded-lg" />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -587,39 +785,34 @@ const ChatPage = () => {
                             No saved chats yet
                         </div>
                     ) : (
-
-                        chatHistory.map((chat: any) => {
-                            return (
-                                <div
-                                    key={chat.id}
-                                    onClick={() => loadChat(chat.id)}
-                                    className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''}`}
-                                >
-                                    <p className="truncate text-sm">{chat.title}</p>
-                                    <div className="opacity-0 group-hover:opacity-100 flex gap-1 z-10">
-                                        <button
-                                            className="p-1 hover:bg-gray-200 rounded-full"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setChatToRename({ id: chat.id, title: chat.title });
-                                                setNewChatTitle(chat.title);
-                                                setIsRenameDialogOpen(true);
-                                            }}
-                                        >
-                                            <Pencil size={14} />
-                                        </button>
-                                        <button
-                                            className="p-1 hover:bg-gray-200 rounded-full"
-                                            onClick={(e) => deleteChat(chat.id, e)}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
+                        chatHistory.map((chat) => (
+                            <div
+                                key={chat.id}
+                                onClick={() => loadChat(chat.id)}
+                                className={`p-3 rounded-lg cursor-pointer flex justify-between items-center group relative ${activeChatId === chat.id ? 'bg-black text-white' : ''}`}
+                            >
+                                <p className="truncate text-sm">{chat.title}</p>
+                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 z-10">
+                                    <button
+                                        className="p-1 hover:bg-gray-200 rounded-full"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setChatToRename({ id: chat.id, title: chat.title });
+                                            setNewChatTitle(chat.title);
+                                            setIsRenameDialogOpen(true);
+                                        }}
+                                    >
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button
+                                        className="p-1 hover:bg-gray-200 rounded-full"
+                                        onClick={(e) => deleteChat(chat.id, e)}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
-                            );
-                        })
-
-
+                            </div>
+                        ))
                     )}
                 </SidebarContent>
             </ChatSidebar>
@@ -643,25 +836,20 @@ const ChatPage = () => {
                                     <p>Type a message below to begin chatting with the AI</p>
                                     <br />
                                     <div className="flex gap-3">
-
                                         <div
                                             onClick={() => setPrompt("Help me solve a python problem:  ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
-
                                             <Code size={32} />
                                             <br />
                                             <p className="text-black font-[600] mt-2">Help me solve a coding problem.</p>
                                         </div>
-
                                         <div
                                             onClick={() => setPrompt("Help me write a sick leave letter to my boss. Keep the tone formal ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
-
                                             <Pencil size={32} />
                                             <br />
                                             <p className="text-black font-[600] mt-2">Help me write a document.</p>
                                         </div>
-
                                         <div
                                             onClick={() => setPrompt("Help me plan a trip to ")}
                                             className="w-[150px] hover:bg-gray-100 cursor-pointer transition-all duration-150 p-3 overflow-hidden h-[150px] border border-gray-300 rounded-lg">
@@ -669,57 +857,20 @@ const ChatPage = () => {
                                             <br />
                                             <p className="text-black font-[600] mt-2">Help me plan my trip.</p>
                                         </div>
-
-
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            chatMessages.map((chat, index) => (
+                            chatMessages.map((message, index) => (
                                 <div key={index}>
                                     <div className="flex-shrink mt-1">
-                                        {chat.role === "user" ? (
-                                            // <Image
-                                            //     src={user?.imageUrl || "https://via.placeholder.com/30"}
-                                            //     height={22}
-                                            //     width={22}
-                                            //     alt="User Profile"
-                                            //     className="rounded-full"
-                                            // />
+                                        {message.role === "user" ? (
                                             <p></p>
                                         ) : (
-                                            // <Sparkle size={22} className="text-blue-700" />
                                             <p></p>
                                         )}
                                     </div>
-                                    <div key={index} className={`p-3 my-3 rounded-lg flex gap-3 ${chat.role === "user"
-                                        ? 'bg-black ml-auto max-w-md border text-white'
-                                        : 'text-gray-800 max-w-5xl right-2'
-                                        }`}>
-                                        <div className="flex-grow prose prose-sm max-w-none">
-                                            {chat.role === "model" ? (
-                                                <div>
-                                                    <div className="whitespace-pre-wrap max-w-[700px] overflow-x-scroll p-3 rounded">
-                                                        <Markdown>
-                                                            {chat.content}
-                                                        </Markdown>
-                                                    </div>
-                                                    <br />
-                                                    <div className="flex gap-3">
-                                                        <Copy size={18} className="cursor-pointer" onClick={() => {
-                                                            navigator.clipboard.writeText(chat.content);
-                                                            toast.success("Copied Successfully!")
-                                                        }} />
-                                                        <Save size={18} className="cursor-pointer" onClick={() => {
-                                                            handleSaveClick(chat.content)
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                chat.content
-                                            )}
-                                        </div>
-                                    </div>
+                                    <MessageRenderer message={message} />
                                 </div>
                             ))
                         )}
@@ -747,11 +898,21 @@ const ChatPage = () => {
                             </button>
                         )}
 
-                        {/* Image Preview */}
-                        {imagePreview && (
+                        {/* Command detection indicator */}
+                        {detectedCommands.length > 0 && (
+                            <div className="mb-2 bg-gray-50 p-2 rounded-lg flex gap-2 items-center">
+                                <span className="text-sm">Detected:</span>
+                                {detectedCommands.map((command, index) => (
+                                    <span key={index} className="text-xs bg-gray-200 px-2 py-1 rounded-full">{command}</span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Uploaded image preview */}
+                        {uploadedImageUrl && (
                             <div className="mb-2 relative inline-block">
                                 <img
-                                    src={imagePreview}
+                                    src={uploadedImageUrl}
                                     alt="Upload preview"
                                     className="max-w-32 max-h-32 rounded-lg border"
                                 />
@@ -764,10 +925,28 @@ const ChatPage = () => {
                             </div>
                         )}
 
-                        {/* Command Helper */}
-                        {prompt.includes('/') && (
-                            <div className="mb-2 text-lg bg-gray-50 p-2 rounded-lg">
-                                💡<span className="bg-gradient-to-r from-blue-700 to-orange-700 bg-clip-text text-transparent">use <code>/search query</code> for web search</span>
+                        {/* Command suggestions toggle */}
+                        {showSuggestions && (
+                            <div className="mb-2 bg-gray-50 p-3 rounded-lg">
+                                <h3 className="font-medium mb-2">Available Commands</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {commandSuggestions.map((suggestion, index) => (
+                                        <div
+                                            key={index}
+                                            className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+                                            onClick={() => {
+                                                setPrompt(suggestion.example);
+                                                setShowSuggestions(false);
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span>{suggestion.icon}</span>
+                                                <span className="font-medium">{suggestion.command}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-600 mt-1">{suggestion.description}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -775,7 +954,7 @@ const ChatPage = () => {
                             <div className="flex flex-col gap-2 flex-grow">
                                 <textarea
                                     rows={1}
-                                    className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[4rem] max-h-[400px] scroll-smooth overflow-auto duration-150"
+                                    className="p-5 text-gray-800 border rounded-lg focus:border-black focus:ring-2 bg-white focus:ring-black focus:outline-none flex-grow transition-all min-h-[2rem] max-h-[400px] scroll-smooth overflow-auto duration-150"
                                     placeholder={
                                         user
                                             ? "Type your message here... (Try /search for web search)"
@@ -794,9 +973,8 @@ const ChatPage = () => {
                                 />
                             </div>
 
-                            {/* Image Upload Button */}
                             <div className="flex flex-col gap-2">
-                                {/* <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0">
+                                <label className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -804,10 +982,16 @@ const ChatPage = () => {
                                         className="hidden"
                                         disabled={loadingResponse || !user}
                                     />
-                                    <Image size={18} />
-                                </label> */}
+                                    <ImageIcon size={18} />
+                                </label>
 
-                                {/* Send Button */}
+                                <button
+                                    onClick={() => setShowSuggestions(!showSuggestions)}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg p-3 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0"
+                                >
+                                    💡
+                                </button>
+
                                 <button
                                     className={`bg-black text-white rounded-lg p-5 cursor-pointer transition-all duration-150 flex items-center justify-center flex-shrink-0 ${(!prompt.trim() || loadingResponse || !user)
                                         ? 'opacity-50 cursor-not-allowed'
@@ -816,7 +1000,7 @@ const ChatPage = () => {
                                     onClick={handleEnhancedSubmit}
                                     disabled={!prompt.trim() || loadingResponse || !user}
                                 >
-                                    {selectedImage ? <Image size={18} /> : <SendHorizonal size={18} />}
+                                    {uploadedImageUrl ? <ImageIcon size={18} /> : <SendHorizonal size={18} />}
                                 </button>
                             </div>
                         </div>
@@ -824,21 +1008,12 @@ const ChatPage = () => {
                         <br />
 
                         <div className="gap-2 flex">
-                            <Select onValueChange={(value) => setModelInstruction(value)} defaultValue=" ">
-                                <SelectTrigger className="w-[130px] flex">
-                                    <Box /><SelectValue placeholder="Model" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value=" " key={'default'}>Default</SelectItem>
-                                    {userModels.map((model: any) => (
-                                        <SelectItem key={model.id} value={model.instructions}>{model.title}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select onValueChange={(value) => setModel(value)} defaultValue="gemini-2.0-flash">
-                                <SelectTrigger className="w-[130px] flex">
-                                    <Sparkles /><SelectValue placeholder="Model" />
+                            <Select
+                                value={model}
+                                onValueChange={(value) => setModel(value)}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select model" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="gemini-2.0-flash" key={"Gemini 2.0 Flash"}>Gemini 2.0 Flash</SelectItem>
@@ -846,108 +1021,100 @@ const ChatPage = () => {
                                     <SelectItem value="llama-4-scout" key={"llama-4-scout"}>LLaMA 4 Scout</SelectItem>
                                     <SelectItem value="gpt-4" key={"gpt-4"}>GPT 4</SelectItem>
                                     <SelectItem value="deepseek-v3" key={"deepseek-v3"}>Deepseek v3</SelectItem>
+                                    <SelectItem value="claude-3.7" key={"claude-3.7"}>Claude 3.7 Sonnet</SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            {/* Search indicator */}
-                            {prompt.toLowerCase().includes('/search') && (
-                                <div className="flex items-center gap-1 rounded-full text-xs text-blue-600 bg-blue-50 px-3 py-1">
-                                    <Search size={12} />
-                                    Web Search
-                                </div>
-                            )}
+                            <Select
+                                value={selectedUserModel}
+                                onValueChange={(value) => {
+                                    const selectedModel = userModels.find((model: any) => model.title === value);
+                                    setModelInstruction(selectedModel?.instructions || '');
+                                    setSelectedUserModel(value);
+                                }}
+                                defaultValue="Default"
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <BoxIcon /><SelectValue placeholder="Select Persona" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Default" key={'default'}>Default</SelectItem>
+                                    {userModels.map((model: any) => (
+                                        <SelectItem value={model.title} key={model.title}>{model.title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>
 
+                {/* Save Document Dialog */}
+                <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Save as Document</DialogTitle>
+                        </DialogHeader>
+                        <Input
+                            placeholder="Document title"
+                            value={documentTitle}
+                            onChange={(e) => setDocumentTitle(e.target.value)}
+                        />
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsSaveDialogOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (documentToSave) {
+                                        saveDocument(
+                                            documentTitle || "Untitled Document",
+                                            documentToSave.content
+                                        );
+                                    }
+                                }}
+                                disabled={!documentTitle.trim()}
+                            >
+                                Save
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
+                {/* Rename Chat Dialog */}
+                <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Rename Chat</DialogTitle>
+                        </DialogHeader>
+                        <Input
+                            placeholder="New chat title"
+                            value={newChatTitle}
+                            onChange={(e) => setNewChatTitle(e.target.value)}
+                        />
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsRenameDialogOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (chatToRename) {
+                                        renameChat(chatToRename.id, newChatTitle);
+                                    }
+                                }}
+                                disabled={!newChatTitle.trim()}
+                            >
+                                Rename
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </main>
-
-            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Save Document</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <label htmlFor="title" className="text-sm font-medium">
-                                Document Title
-                            </label>
-                            <Input
-                                id="title"
-                                value={documentTitle}
-                                onChange={(e) => setDocumentTitle(e.target.value)}
-                                placeholder="Enter document title"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setIsSaveDialogOpen(false);
-                                setDocumentTitle("");
-                                setDocumentToSave(null);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (documentToSave) {
-                                    saveDocument(documentTitle || "Untitled Document", documentToSave.content);
-                                }
-                            }}
-                            disabled={!documentTitle.trim()}
-                        >
-                            Save
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Rename Chat</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <label htmlFor="chatTitle" className="text-sm font-medium">
-                                Chat Title
-                            </label>
-                            <Input
-                                id="chatTitle"
-                                value={newChatTitle}
-                                onChange={(e) => setNewChatTitle(e.target.value)}
-                                placeholder="Enter new chat title"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setIsRenameDialogOpen(false);
-                                setChatToRename(null);
-                                setNewChatTitle("");
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (chatToRename) {
-                                    renameChat(chatToRename.id, newChatTitle);
-                                }
-                            }}
-                            disabled={!newChatTitle.trim()}
-                        >
-                            Rename
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </SidebarProvider>
     );
 };

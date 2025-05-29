@@ -71,7 +71,7 @@ export default function Home() {
         <div className="flex gap-4 flex-wrap">
 
           <Link href={"/chats"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg hover:bg-gradient-to-r hover:from-blue-700 hover:text-white hover:to-indigo-700 cursor-pointer">
               <MessageCircleMore size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
@@ -82,7 +82,7 @@ export default function Home() {
 
 
           <Link href={"/documents"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg hover:bg-gradient-to-r hover:from-blue-700 hover:text-white hover:to-indigo-700 cursor-pointer">
               <FileIcon size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
@@ -93,7 +93,7 @@ export default function Home() {
 
 
           <Link href={"/models"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg hover:bg-gradient-to-r hover:from-blue-700 hover:text-white hover:to-indigo-700 cursor-pointer">
               <Box size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
@@ -103,7 +103,7 @@ export default function Home() {
           </Link>
 
           <Link href={"/workflows"}>
-            <div className="w-[170px] p-3 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-100 cursor-pointer">
+            <div className="w-[170px] p-3 border border-gray-300 rounded-lg hover:bg-gradient-to-r hover:from-blue-700 hover:text-white hover:to-indigo-700 cursor-pointer">
               <Workflow size={32} className="mt-3" />
 
               <div className="h-[70px]"></div>
